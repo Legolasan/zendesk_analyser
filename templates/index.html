@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Zendesk Ticket Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        --info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        --dark-bg: #1a1d29;
+        --card-bg: #ffffff;
+        --text-primary: #2d3748;
+        --text-secondary: #718096;
+        --border-color: #e2e8f0;
+        --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+        --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+        --shadow-xl: 0 20px 40px rgba(0,0,0,0.15);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body { 
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .main-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+      }
+
+      .header-section {
+        text-align: center;
+        margin-bottom: 2.5rem;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: var(--shadow-xl);
+        backdrop-filter: blur(10px);
+      }
+
+      .header-section h1 {
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .header-section p {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+      }
+
+      .section-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      @media (min-width: 992px) {
+        .section-container {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .card-modern {
+        background: var(--card-bg);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        border: none;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .card-modern:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-xl);
+      }
+
+      .card-header-modern {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 1.5rem;
+        border: none;
+        font-weight: 600;
+        font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .card-header-modern i {
+        font-size: 1.5rem;
+      }
+
+      .card-body-modern {
+        padding: 2rem;
+      }
+
+      .form-section {
+        background: var(--card-bg);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .form-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        font-size: 1.1rem;
+      }
+
+      .input-group-modern {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .form-control-modern {
+        flex: 1;
+        padding: 1rem 1.25rem;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .form-control-modern:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+      }
+
+      .btn-primary-modern {
+        background: var(--primary-gradient);
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn-primary-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        filter: brightness(1.05);
+      }
+
+      .btn-primary-modern:active {
+        transform: translateY(0);
+      }
+
+      .btn-outline-modern {
+        border: 2px solid #667eea;
+        color: #667eea;
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
+        background: transparent;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .btn-outline-modern:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .search-section {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .list-group-item-modern {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .list-group-item-modern:hover {
+        border-color: #667eea;
+        box-shadow: var(--shadow-md);
+        transform: translateX(5px);
+      }
+
+      .badge-modern {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.85rem;
+      }
+
+      .badge-success-modern {
+        background: var(--success-gradient);
+        color: white;
+      }
+
+      .badge-warning-modern {
+        background: var(--warning-gradient);
+        color: white;
+      }
+
+      .badge-info-modern {
+        background: var(--info-gradient);
+        color: white;
+      }
+
+      .badge-secondary-modern {
+        background: linear-gradient(135deg, #868e96 0%, #495057 100%);
+        color: white;
+      }
+
+      .output-heading {
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        margin-top: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .output-heading:first-child {
+        margin-top: 0;
+      }
+
+      pre {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-left: 4px solid #667eea;
+        border-radius: 12px;
+        padding: 1.5rem;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+        overflow-x: auto;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .alert-modern {
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        border: none;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 1rem;
+      }
+
+      .alert-success-modern {
+        background: var(--success-gradient);
+        color: white;
+      }
+
+      .alert-warning-modern {
+        background: var(--warning-gradient);
+        color: white;
+      }
+
+      .alert-info-modern {
+        background: var(--info-gradient);
+        color: white;
+      }
+
+      .alert-secondary-modern {
+        background: linear-gradient(135deg, #868e96 0%, #495057 100%);
+        color: white;
+      }
+
+      .results-section {
+        background: var(--card-bg);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        padding: 2.5rem;
+        margin-top: 2rem;
+      }
+
+      #loader {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #loader.show {
+        display: flex;
+      }
+
+      .loader-content {
+        text-align: center;
+        color: white;
+      }
+
+      .spinner-border {
+        width: 4rem;
+        height: 4rem;
+        border-width: 0.3rem;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-secondary);
+      }
+
+      .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+      }
+
+      footer {
+        text-align: center;
+        padding: 2rem;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+      }
+
+      .ticket-id-display {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 1.1rem;
+      }
+
+      .date-badge {
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-out;
+      }
+    </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <!-- Header -->
+    <div class="header-section fade-in">
+      <h1><i class="fas fa-ticket-alt"></i> Zendesk Ticket Analyzer</h1>
+      <p>AI-Powered Test Case Generation & Analysis</p>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="section-container">
+      <!-- Left Section: Query Form -->
+      <div class="form-section fade-in">
+        <h3 class="mb-4" style="color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-search" style="color: #667eea;"></i> Query Ticket
+        </h3>
+        <form method="post">
+          <div class="mb-4">
+            <label for="ticket_id" class="form-label">
+              <i class="fas fa-hashtag"></i> Zendesk Ticket ID
+            </label>
+            <div class="input-group-modern">
+              <input type="text" class="form-control form-control-modern" id="ticket_id" name="ticket_id" 
+                     placeholder="Enter Ticket ID (e.g., 12345)" value="{{ ticket_id|default('') }}">
+              <button type="submit" class="btn btn-primary-modern">
+                <i class="fas fa-paper-plane"></i> Analyze
+              </button>
+        </div>
+      </div>
+    </form>
+      </div>
+
+      <!-- Right Section: Database Search -->
+      <div class="card-modern fade-in">
+        <div class="card-header-modern">
+          <i class="fas fa-database"></i>
+          <span>Saved Tickets Database</span>
+        </div>
+        <div class="card-body-modern">
+        <!-- Search Box -->
+          <div class="search-section">
+            <label for="search_tickets" class="form-label">
+              <i class="fas fa-search"></i> Search Database
+            </label>
+            <div class="input-group-modern">
+              <input type="text" class="form-control form-control-modern" id="search_tickets" 
+                     placeholder="Search by Ticket ID, Issue, or Root Cause...">
+              <button class="btn btn-outline-modern" type="button" onclick="searchTickets()">
+                <i class="fas fa-search"></i> Search
+              </button>
+              <button class="btn btn-outline-modern" type="button" onclick="clearSearch()">
+                <i class="fas fa-times"></i> Clear
+              </button>
+            </div>
+        </div>
+        
+        <!-- Search Results -->
+        <div id="search_results" class="mb-3" style="display: none;"></div>
+        
+        <!-- Recent Tickets -->
+        <div id="recent_tickets">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 style="color: var(--text-primary); font-weight: 600;">
+                <i class="fas fa-clock"></i> Recent Tickets
+              </h5>
+              <button class="btn btn-outline-modern btn-sm" onclick="loadMoreRecentTickets()" id="show_more_btn" style="display: none;">
+                <i class="fas fa-chevron-down"></i> Show More
+            </button>
+          </div>
+          {% if recent_tickets %}
+            <div class="list-group" id="recent_tickets_list">
+              {% for ticket in recent_tickets %}
+                <div class="list-group-item-modern">
+                  <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+                    <span class="ticket-id-display">#{{ ticket.ticket_id }}</span>
+                    <span class="date-badge">{{ ticket.updated_at[:10] if ticket.updated_at else '' }}</span>
+                </div>
+                  <p class="mb-2" style="color: var(--text-secondary); line-height: 1.6;">
+                    {{ ticket.issue_description[:120] if ticket.issue_description else 'No description' }}...
+                  </p>
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button class="btn btn-outline-modern btn-sm" onclick="loadTicket('{{ ticket.ticket_id }}')">
+                      <i class="fas fa-eye"></i> Load
+                    </button>
+                    <span class="badge badge-modern badge-{{ 'success' if ticket.test_case_needed else 'secondary' }}-modern">
+                      <i class="fas fa-{{ 'check-circle' if ticket.test_case_needed else 'times-circle' }}"></i> 
+                    Test Case: {{ 'Yes' if ticket.test_case_needed else 'No' }}
+                  </span>
+                  {% if ticket.regression_test_needed is not none %}
+                      <span class="badge badge-modern badge-{{ 'warning' if ticket.regression_test_needed else 'info' }}-modern">
+                        <i class="fas fa-{{ 'exclamation-triangle' if ticket.regression_test_needed else 'info-circle' }}"></i>
+                      Regression: {{ 'Yes' if ticket.regression_test_needed else 'No' }}
+                    </span>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            <div id="more_tickets_container" style="display: none;"></div>
+              <div class="text-center mt-3" id="load_more_spinner" style="display: none;">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+          {% else %}
+              <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No saved tickets yet. Process a ticket to save it here.</p>
+              </div>
+          {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    {% if error %}
+      <div class="alert alert-danger alert-modern fade-in" style="background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); color: white; border-radius: 15px; margin-bottom: 2rem;">
+        <i class="fas fa-exclamation-circle"></i> {{ error }}
+      </div>
+    {% endif %}
+
+    <!-- Results Section -->
+    {% if issue_description or root_cause %}
+    <div class="results-section fade-in">
+      <h2 class="mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        <i class="fas fa-file-alt"></i> Analysis Results
+      </h2>
+        {% if issue_description %}
+        <h4 class="output-heading">
+          <i class="fas fa-bug"></i> Issue Description
+        </h4>
+          <pre>{{ issue_description }}</pre>
+        {% endif %}
+        {% if root_cause %}
+        <h4 class="output-heading">
+          <i class="fas fa-search"></i> Root Cause
+        </h4>
+          <pre>{{ root_cause }}</pre>
+        {% endif %}
+        {% if test_case_needed is not none %}
+        <h4 class="output-heading">
+          <i class="fas fa-clipboard-check"></i> Test Case Evaluation
+        </h4>
+          {% if test_case_needed %}
+          <div class="alert alert-success-modern alert-modern">
+            <strong><i class="fas fa-check-circle"></i> Test Case Needed: Yes</strong>
+              {% if test_case_needed_reason %}
+                <p class="mb-0 mt-2"><small>{{ test_case_needed_reason }}</small></p>
+              {% endif %}
+            </div>
+            {% if regression_test_needed is not none %}
+              <div class="mb-3">
+                {% if regression_test_needed %}
+                <div class="alert alert-warning-modern alert-modern">
+                  <strong><i class="fas fa-exclamation-triangle"></i> Regression Test Needed: Yes</strong>
+                    {% if regression_test_needed_reason %}
+                      <p class="mb-0 mt-2"><small>{{ regression_test_needed_reason }}</small></p>
+                    {% endif %}
+                  </div>
+                {% else %}
+                <div class="alert alert-secondary-modern alert-modern">
+                  <strong><i class="fas fa-info-circle"></i> Regression Test Needed: No</strong>
+                    {% if regression_test_needed_reason %}
+                      <p class="mb-0 mt-2"><small>{{ regression_test_needed_reason }}</small></p>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% else %}
+          <div class="alert alert-info-modern alert-modern">
+            <strong><i class="fas fa-info-circle"></i> Test Case Needed: No</strong>
+              {% if test_case_needed_reason %}
+                <p class="mb-0 mt-2"><small>{{ test_case_needed_reason }}</small></p>
+              {% endif %}
+            </div>
+          {% endif %}
+        {% endif %}
+        {% if test_case_needed %}
+          {% if test_case_description and test_case_description != "N/A - Test case not needed" %}
+          <h4 class="output-heading">
+            <i class="fas fa-list-alt"></i> Test Case Description
+          </h4>
+          <pre>{{ test_case_description }}</pre>
+        {% endif %}
+          {% if test_case_steps and test_case_steps != "N/A - Test case not needed" %}
+          <h4 class="output-heading">
+            <i class="fas fa-tasks"></i> Test Case Steps
+          </h4>
+          <pre>{{ test_case_steps }}</pre>
+          {% endif %}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <footer>
+      <p>&copy; 2025 Zendesk Ticket Analyzer | AI-Powered Test Case Generation</p>
+    </footer>
+  </div>
+  
+  <!-- Loader overlay -->
+  <div id="loader">
+    <div class="loader-content">
+      <div class="spinner-border text-white" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-white mt-3">Fetching ticket and generating test case...</p>
+    </div>
+  </div>
+
+  <script>
+    let loaderTimeout;
+    
+    // Show loader when form is submitted
+    document.querySelector('form').addEventListener('submit', function() {
+      const loader = document.getElementById('loader');
+      loader.classList.add('show');
+      
+      // Safety timeout: hide loader after 90 seconds max
+      clearTimeout(loaderTimeout);
+      loaderTimeout = setTimeout(function() {
+        loader.classList.remove('show');
+        alert('The request is taking longer than expected. Please refresh the page and try again.');
+      }, 90000); // 90 seconds
+    });
+    
+    // Hide loader when page loads (if somehow still showing)
+    window.addEventListener('load', function() {
+      const loader = document.getElementById('loader');
+      loader.classList.remove('show');
+      clearTimeout(loaderTimeout);
+    });
+
+    // Search tickets
+    function searchTickets() {
+      const query = document.getElementById('search_tickets').value.trim();
+      if (!query) {
+        alert('Please enter a search term');
+        return;
+      }
+      
+      const resultsDiv = document.getElementById('search_results');
+      resultsDiv.style.display = 'block';
+      resultsDiv.innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm text-primary" role="status"></div><p class="mt-2 text-muted">Searching...</p></div>';
+      
+      fetch(`/api/tickets/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(tickets => {
+          if (tickets.length === 0) {
+            resultsDiv.innerHTML = '<div class="alert alert-info-modern alert-modern"><i class="fas fa-info-circle"></i> No tickets found matching your search.</div>';
+            return;
+          }
+          
+          let html = '<h5 class="mb-3" style="color: var(--text-primary); font-weight: 600;"><i class="fas fa-search"></i> Search Results (' + tickets.length + ')</h5><div>';
+          tickets.forEach(ticket => {
+            const testCaseBadge = ticket.test_case_needed ? 
+              '<span class="badge badge-modern badge-success-modern"><i class="fas fa-check-circle"></i> Test Case: Yes</span>' : 
+              '<span class="badge badge-modern badge-secondary-modern"><i class="fas fa-times-circle"></i> Test Case: No</span>';
+            const regressionBadge = ticket.regression_test_needed !== null ? 
+              (ticket.regression_test_needed ? 
+                '<span class="badge badge-modern badge-warning-modern"><i class="fas fa-exclamation-triangle"></i> Regression: Yes</span>' : 
+                '<span class="badge badge-modern badge-info-modern"><i class="fas fa-info-circle"></i> Regression: No</span>') : '';
+            
+            html += `
+              <div class="list-group-item-modern">
+                <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+                  <span class="ticket-id-display">#${ticket.ticket_id}</span>
+                  <span class="date-badge">${ticket.updated_at ? ticket.updated_at.substring(0, 10) : ''}</span>
+                </div>
+                <p class="mb-2" style="color: var(--text-secondary); line-height: 1.6;">${ticket.issue_description ? ticket.issue_description.substring(0, 120) + '...' : 'No description'}</p>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <button class="btn btn-outline-modern btn-sm" onclick="loadTicket('${ticket.ticket_id}')"><i class="fas fa-eye"></i> Load</button>
+                  ${testCaseBadge}${regressionBadge}
+                </div>
+              </div>
+            `;
+          });
+          html += '</div>';
+          resultsDiv.innerHTML = html;
+        })
+        .catch(error => {
+          resultsDiv.innerHTML = '<div class="alert alert-modern" style="background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); color: white;"><i class="fas fa-exclamation-circle"></i> Error searching tickets: ' + error + '</div>';
+        });
+    }
+
+    // Clear search
+    function clearSearch() {
+      document.getElementById('search_tickets').value = '';
+      document.getElementById('search_results').style.display = 'none';
+    }
+
+    // Load ticket from database and display it
+    function loadTicket(ticketId) {
+      const loader = document.getElementById('loader');
+      loader.classList.add('show');
+      
+      fetch(`/api/ticket/${ticketId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Ticket not found');
+          }
+          return response.json();
+        })
+        .then(ticket => {
+          loader.classList.remove('show');
+          
+          // Fill the form with ticket ID
+          document.getElementById('ticket_id').value = ticket.ticket_id;
+          
+          // Create and display the ticket summary section
+          displayTicketSummary(ticket);
+          
+          // Scroll happens in displayTicketSummary
+        })
+        .catch(error => {
+          loader.classList.remove('show');
+          alert('Error loading ticket: ' + error.message);
+        });
+    }
+
+    // Display ticket summary in the results section
+    function displayTicketSummary(ticket) {
+      // Find existing results section
+      let resultsSection = document.querySelector('.results-section');
+      
+      if (!resultsSection) {
+        // Create new results section if it doesn't exist
+        const sectionHtml = `
+          <div class="results-section fade-in">
+            <h2 class="mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+              <i class="fas fa-file-alt"></i> Analysis Results
+            </h2>
+            <div id="ticket_results"></div>
+          </div>
+        `;
+        const errorDiv = document.querySelector('.alert-modern');
+        if (errorDiv) {
+          errorDiv.insertAdjacentHTML('afterend', sectionHtml);
+        } else {
+          const sectionContainer = document.querySelector('.section-container');
+          if (sectionContainer) {
+            sectionContainer.insertAdjacentHTML('afterend', sectionHtml);
+          } else {
+            document.querySelector('.form-section').insertAdjacentHTML('afterend', sectionHtml);
+          }
+        }
+        resultsSection = document.querySelector('.results-section');
+      }
+      
+      const cardBody = resultsSection.querySelector('#ticket_results') || resultsSection;
+      cardBody.innerHTML = '';
+      
+      let html = '';
+      
+      if (ticket.issue_description) {
+        html += `<h4 class="output-heading"><i class="fas fa-bug"></i> Issue Description</h4><pre>${escapeHtml(ticket.issue_description)}</pre>`;
+      }
+      
+      if (ticket.root_cause) {
+        html += `<h4 class="output-heading"><i class="fas fa-search"></i> Root Cause</h4><pre>${escapeHtml(ticket.root_cause)}</pre>`;
+      }
+      
+      if (ticket.test_case_needed !== undefined) {
+        html += `<h4 class="output-heading"><i class="fas fa-clipboard-check"></i> Test Case Evaluation</h4>`;
+        if (ticket.test_case_needed) {
+          html += `<div class="alert alert-success-modern alert-modern">
+            <strong><i class="fas fa-check-circle"></i> Test Case Needed: Yes</strong>
+            ${ticket.test_case_needed_reason ? `<p class="mb-0 mt-2"><small>${escapeHtml(ticket.test_case_needed_reason)}</small></p>` : ''}
+          </div>`;
+          
+          if (ticket.regression_test_needed !== undefined && ticket.regression_test_needed !== null) {
+            if (ticket.regression_test_needed) {
+              html += `<div class="alert alert-warning-modern alert-modern">
+                <strong><i class="fas fa-exclamation-triangle"></i> Regression Test Needed: Yes</strong>
+                ${ticket.regression_test_needed_reason ? `<p class="mb-0 mt-2"><small>${escapeHtml(ticket.regression_test_needed_reason)}</small></p>` : ''}
+              </div>`;
+            } else {
+              html += `<div class="alert alert-secondary-modern alert-modern">
+                <strong><i class="fas fa-info-circle"></i> Regression Test Needed: No</strong>
+                ${ticket.regression_test_needed_reason ? `<p class="mb-0 mt-2"><small>${escapeHtml(ticket.regression_test_needed_reason)}</small></p>` : ''}
+              </div>`;
+            }
+          }
+        } else {
+          html += `<div class="alert alert-info-modern alert-modern">
+            <strong><i class="fas fa-info-circle"></i> Test Case Needed: No</strong>
+            ${ticket.test_case_needed_reason ? `<p class="mb-0 mt-2"><small>${escapeHtml(ticket.test_case_needed_reason)}</small></p>` : ''}
+          </div>`;
+        }
+      }
+      
+      if (ticket.test_case_needed && ticket.test_case_description && ticket.test_case_description !== 'N/A - Test case not needed') {
+        html += `<h4 class="output-heading"><i class="fas fa-list-alt"></i> Test Case Description</h4><pre>${escapeHtml(ticket.test_case_description)}</pre>`;
+      }
+      
+      if (ticket.test_case_needed && ticket.test_case_steps && ticket.test_case_steps !== 'N/A - Test case not needed') {
+        html += `<h4 class="output-heading"><i class="fas fa-tasks"></i> Test Case Steps</h4><pre>${escapeHtml(ticket.test_case_steps)}</pre>`;
+      }
+      
+      if (html) {
+        cardBody.innerHTML = html;
+        resultsSection.style.display = 'block';
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Allow Enter key to trigger search
+    document.getElementById('search_tickets').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        searchTickets();
+      }
+    });
+
+    // Load more recent tickets
+    let recentTicketsLoaded = {{ recent_tickets|length|default(0) }};
+    let showingMore = false;
+
+    function loadMoreRecentTickets() {
+      if (showingMore) {
+        // Collapse back to initial view
+        const moreContainer = document.getElementById('more_tickets_container');
+        const showMoreBtn = document.getElementById('show_more_btn');
+        if (moreContainer) {
+          moreContainer.style.display = 'none';
+          moreContainer.innerHTML = '';
+          showingMore = false;
+          showMoreBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show More';
+        }
+        return;
+      }
+
+      const spinner = document.getElementById('load_more_spinner');
+      const moreContainer = document.getElementById('more_tickets_container');
+      const showMoreBtn = document.getElementById('show_more_btn');
+      
+      spinner.style.display = 'block';
+      
+      fetch('/api/tickets/recent?limit=10')
+        .then(response => response.json())
+        .then(tickets => {
+          spinner.style.display = 'none';
+          
+          if (tickets.length <= recentTicketsLoaded) {
+            // No more tickets to show
+            showMoreBtn.style.display = 'none';
+            return;
+          }
+          
+          // Show only the additional tickets (skip the ones already shown)
+          const additionalTickets = tickets.slice(recentTicketsLoaded);
+          
+          if (additionalTickets.length === 0) {
+            showMoreBtn.style.display = 'none';
+            return;
+          }
+          
+          let html = '<div class="mt-2">';
+          additionalTickets.forEach(ticket => {
+            const testCaseBadge = ticket.test_case_needed ? 
+              '<span class="badge badge-modern badge-success-modern"><i class="fas fa-check-circle"></i> Test Case: Yes</span>' : 
+              '<span class="badge badge-modern badge-secondary-modern"><i class="fas fa-times-circle"></i> Test Case: No</span>';
+            const regressionBadge = ticket.regression_test_needed !== null ? 
+              (ticket.regression_test_needed ? 
+                '<span class="badge badge-modern badge-warning-modern"><i class="fas fa-exclamation-triangle"></i> Regression: Yes</span>' : 
+                '<span class="badge badge-modern badge-info-modern"><i class="fas fa-info-circle"></i> Regression: No</span>') : '';
+            
+            html += `
+              <div class="list-group-item-modern">
+                <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+                  <span class="ticket-id-display">#${ticket.ticket_id}</span>
+                  <span class="date-badge">${ticket.updated_at ? ticket.updated_at.substring(0, 10) : ''}</span>
+                </div>
+                <p class="mb-2" style="color: var(--text-secondary); line-height: 1.6;">${ticket.issue_description ? ticket.issue_description.substring(0, 120) + '...' : 'No description'}</p>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <button class="btn btn-outline-modern btn-sm" onclick="loadTicket('${ticket.ticket_id}')"><i class="fas fa-eye"></i> Load</button>
+                  ${testCaseBadge}${regressionBadge}
+                </div>
+              </div>
+            `;
+          });
+          html += '</div>';
+          
+          moreContainer.innerHTML = html;
+          moreContainer.style.display = 'block';
+          showingMore = true;
+          showMoreBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show Less';
+        })
+        .catch(error => {
+          spinner.style.display = 'none';
+          console.error('Error loading more tickets:', error);
+        });
+    }
+
+    // Check if we should show the "Show More" button
+    window.addEventListener('load', function() {
+      // Check if there might be more tickets (we show 3 initially, check if there are more than 3)
+      fetch('/api/tickets/recent?limit=4')
+        .then(response => response.json())
+        .then(tickets => {
+          if (tickets.length > recentTicketsLoaded) {
+            document.getElementById('show_more_btn').style.display = 'block';
+          }
+        })
+        .catch(error => {
+          console.error('Error checking for more tickets:', error);
+        });
+    });
+  </script>
+</body>
+</html>
