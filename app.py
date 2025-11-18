@@ -3,10 +3,12 @@ import requests
 import openai
 import os
 import sqlite3
+import time
 from datetime import datetime
-from requests.exceptions import Timeout, RequestException
+from requests.exceptions import Timeout, RequestException, ConnectionError as RequestsConnectionError
 from openai import OpenAIError
 from zendesk_auth import zendesk_auth
+import errno
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
@@ -19,31 +21,34 @@ openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 def init_db():
     """Initialize the SQLite database and create tables if they don't exist."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS ticket_summaries (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ticket_id TEXT NOT NULL UNIQUE,
-            issue_description TEXT,
-            root_cause TEXT,
-            test_case_needed INTEGER,
-            test_case_needed_reason TEXT,
-            regression_test_needed INTEGER,
-            regression_test_needed_reason TEXT,
-            test_case_description TEXT,
-            test_case_steps TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    # Create index on ticket_id for faster lookups
-    conn.execute('''
-        CREATE INDEX IF NOT EXISTS idx_ticket_id ON ticket_summaries(ticket_id)
-    ''')
-    # Enable WAL mode for better concurrent performance
-    conn.execute('PRAGMA journal_mode=WAL')
-    conn.commit()
-    conn.close()
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS ticket_summaries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ticket_id TEXT NOT NULL UNIQUE,
+                    issue_description TEXT,
+                    root_cause TEXT,
+                    test_case_needed INTEGER,
+                    test_case_needed_reason TEXT,
+                    regression_test_needed INTEGER,
+                    regression_test_needed_reason TEXT,
+                    test_case_description TEXT,
+                    test_case_steps TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            # Create index on ticket_id for faster lookups
+            conn.execute('''
+                CREATE INDEX IF NOT EXISTS idx_ticket_id ON ticket_summaries(ticket_id)
+            ''')
+            # Enable WAL mode for better concurrent performance
+            conn.execute('PRAGMA journal_mode=WAL')
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error initializing database: {str(e)}")
+        raise
 
 def save_ticket_summary(ticket_id, fields):
     """
@@ -54,37 +59,39 @@ def save_ticket_summary(ticket_id, fields):
         fields: dict containing all summary fields
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
-        # Use INSERT OR REPLACE to update if ticket already exists
-        # Convert boolean to integer for database storage
-        regression_value = None
-        if fields.get('regression_test_needed') is not None:
-            regression_value = 1 if fields.get('regression_test_needed') else 0
-        
-        conn.execute('''
-            INSERT OR REPLACE INTO ticket_summaries (
-                ticket_id, issue_description, root_cause,
-                test_case_needed, test_case_needed_reason,
-                regression_test_needed, regression_test_needed_reason,
-                test_case_description, test_case_steps, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            ticket_id,
-            fields.get('issue_description', ''),
-            fields.get('root_cause', ''),
-            1 if fields.get('test_case_needed') else 0,
-            fields.get('test_case_needed_reason', ''),
-            regression_value,
-            fields.get('regression_test_needed_reason', ''),
-            fields.get('test_case_description', ''),
-            fields.get('test_case_steps', ''),
-            datetime.now().isoformat()
-        ))
-        conn.commit()
-        conn.close()
-    except Exception as e:
+        with sqlite3.connect(DB_PATH) as conn:
+            # Use INSERT OR REPLACE to update if ticket already exists
+            # Convert boolean to integer for database storage
+            regression_value = None
+            if fields.get('regression_test_needed') is not None:
+                regression_value = 1 if fields.get('regression_test_needed') else 0
+            
+            conn.execute('''
+                INSERT OR REPLACE INTO ticket_summaries (
+                    ticket_id, issue_description, root_cause,
+                    test_case_needed, test_case_needed_reason,
+                    regression_test_needed, regression_test_needed_reason,
+                    test_case_description, test_case_steps, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                ticket_id,
+                fields.get('issue_description', ''),
+                fields.get('root_cause', ''),
+                1 if fields.get('test_case_needed') else 0,
+                fields.get('test_case_needed_reason', ''),
+                regression_value,
+                fields.get('regression_test_needed_reason', ''),
+                fields.get('test_case_description', ''),
+                fields.get('test_case_steps', ''),
+                datetime.now().isoformat()
+            ))
+            conn.commit()
+    except sqlite3.Error as e:
         # Log error but don't fail the request
         print(f"Error saving ticket summary to database: {str(e)}")
+    except Exception as e:
+        # Log error but don't fail the request
+        print(f"Unexpected error saving ticket summary to database: {str(e)}")
 
 def get_ticket_summary(ticket_id):
     """
@@ -92,19 +99,21 @@ def get_ticket_summary(ticket_id):
     Returns dict with ticket data or None if not found.
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row  # Enable column access by name
-        cursor = conn.execute('''
-            SELECT * FROM ticket_summaries WHERE ticket_id = ?
-        ''', (ticket_id,))
-        row = cursor.fetchone()
-        conn.close()
-        
-        if row:
-            return dict(row)
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row  # Enable column access by name
+            cursor = conn.execute('''
+                SELECT * FROM ticket_summaries WHERE ticket_id = ?
+            ''', (ticket_id,))
+            row = cursor.fetchone()
+            
+            if row:
+                return dict(row)
+            return None
+    except sqlite3.Error as e:
+        print(f"Error retrieving ticket summary from database: {str(e)}")
         return None
     except Exception as e:
-        print(f"Error retrieving ticket summary from database: {str(e)}")
+        print(f"Unexpected error retrieving ticket summary from database: {str(e)}")
         return None
 
 def get_recent_tickets(limit=10):
@@ -113,21 +122,23 @@ def get_recent_tickets(limit=10):
     Returns list of dicts with ticket data.
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.execute('''
-            SELECT ticket_id, issue_description, root_cause, 
-                   test_case_needed, regression_test_needed,
-                   created_at, updated_at
-            FROM ticket_summaries 
-            ORDER BY updated_at DESC 
-            LIMIT ?
-        ''', (limit,))
-        rows = cursor.fetchall()
-        conn.close()
-        return [dict(row) for row in rows]
-    except Exception as e:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute('''
+                SELECT ticket_id, issue_description, root_cause, 
+                       test_case_needed, regression_test_needed,
+                       created_at, updated_at
+                FROM ticket_summaries 
+                ORDER BY updated_at DESC 
+                LIMIT ?
+            ''', (limit,))
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+    except sqlite3.Error as e:
         print(f"Error retrieving recent tickets from database: {str(e)}")
+        return []
+    except Exception as e:
+        print(f"Unexpected error retrieving recent tickets from database: {str(e)}")
         return []
 
 def search_tickets(query):
@@ -136,22 +147,24 @@ def search_tickets(query):
     Returns list of dicts with matching ticket data.
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.execute('''
-            SELECT ticket_id, issue_description, root_cause,
-                   test_case_needed, regression_test_needed,
-                   created_at, updated_at
-            FROM ticket_summaries 
-            WHERE ticket_id LIKE ? OR issue_description LIKE ? OR root_cause LIKE ?
-            ORDER BY updated_at DESC 
-            LIMIT 20
-        ''', (f'%{query}%', f'%{query}%', f'%{query}%'))
-        rows = cursor.fetchall()
-        conn.close()
-        return [dict(row) for row in rows]
-    except Exception as e:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute('''
+                SELECT ticket_id, issue_description, root_cause,
+                       test_case_needed, regression_test_needed,
+                       created_at, updated_at
+                FROM ticket_summaries 
+                WHERE ticket_id LIKE ? OR issue_description LIKE ? OR root_cause LIKE ?
+                ORDER BY updated_at DESC 
+                LIMIT 20
+            ''', (f'%{query}%', f'%{query}%', f'%{query}%'))
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+    except sqlite3.Error as e:
         print(f"Error searching tickets in database: {str(e)}")
+        return []
+    except Exception as e:
+        print(f"Unexpected error searching tickets in database: {str(e)}")
         return []
 
 def format_ticket_for_display(row):
@@ -172,6 +185,44 @@ def format_ticket_for_display(row):
 
 # Initialize database on app startup
 init_db()
+
+def fetch_zendesk_ticket_with_retry(ticket_id, max_retries=3, base_timeout=30):
+    """
+    Fetch Zendesk ticket with retry logic and exponential backoff.
+    Args:
+        ticket_id: Zendesk ticket ID
+        max_retries: Maximum number of retry attempts
+        base_timeout: Base timeout in seconds
+    Returns:
+        requests.Response object
+    Raises:
+        RequestException: If all retries fail
+    """
+    url = ZENDESK_URL_TEMPLATE.format(ticket_id)
+    headers = zendesk_auth.get_auth_header()
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(
+                url,
+                headers=headers,
+                timeout=base_timeout
+            )
+            return response
+        except (Timeout, RequestsConnectionError) as e:
+            if attempt < max_retries - 1:
+                # Exponential backoff: wait 1s, 2s, 4s...
+                wait_time = 2 ** attempt
+                print(f"Request failed (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                # Last attempt failed, raise the exception
+                raise RequestException(f"Failed to fetch ticket after {max_retries} attempts: {str(e)}")
+        except Exception as e:
+            # For other exceptions, don't retry
+            raise RequestException(f"Unexpected error fetching ticket: {str(e)}")
+    
+    raise RequestException(f"Failed to fetch ticket after {max_retries} attempts")
 
 def get_openai_summary_and_testcase(conversation, timeout=60):
     """
@@ -352,8 +403,14 @@ CRITICAL FOR TEST CASES: When writing Test Case Description and Test Case Steps,
         
     except TimeoutError:
         raise TimeoutError(f"OpenAI API request timed out after {timeout} seconds")
-    except Exception as e:
+    except OpenAIError as e:
         raise Exception(f"OpenAI API error: {str(e)}")
+    except Exception as e:
+        # Handle connection errors, broken pipes, etc.
+        error_msg = str(e)
+        if 'BrokenPipeError' in error_msg or 'broken pipe' in error_msg.lower():
+            raise Exception(f"Connection interrupted: The request was interrupted. Please try again.")
+        raise Exception(f"OpenAI API error: {error_msg}")
     
     def section(key, text):
         part = text.split(f'{key}:')
@@ -424,12 +481,9 @@ def index():
             session['error'] = "Please enter a ticket ID."
         else:
             try:
-                # Fetch Zendesk ticket with 30 second timeout
-                response = requests.get(
-                    ZENDESK_URL_TEMPLATE.format(ticket_id),
-                    headers=zendesk_auth.get_auth_header(),
-                    timeout=30
-                )
+                # Fetch Zendesk ticket with retry logic
+                response = fetch_zendesk_ticket_with_retry(ticket_id, max_retries=3, base_timeout=30)
+                
                 if response.status_code != 200:
                     session['error'] = f"Zendesk API error: {response.status_code}"
                 else:
@@ -457,12 +511,38 @@ def index():
             except TimeoutError as e:
                 session['error'] = f"OpenAI API timed out: {str(e)}"
             except RequestException as e:
-                session['error'] = f"Network error: {str(e)}"
+                error_msg = str(e)
+                if 'BrokenPipeError' in error_msg or 'broken pipe' in error_msg.lower():
+                    session['error'] = "Connection interrupted. Please try again."
+                else:
+                    session['error'] = f"Network error: {error_msg}"
+            except BrokenPipeError:
+                # Client disconnected, silently handle
+                session['error'] = "Connection interrupted. Please try again."
+            except OSError as e:
+                # Handle broken pipe and other OS-level errors
+                if e.errno == errno.EPIPE:
+                    session['error'] = "Connection interrupted. Please try again."
+                else:
+                    session['error'] = f"System error: {str(e)}"
             except Exception as e:
-                session['error'] = f"Error: {str(e)}"
+                error_msg = str(e)
+                if 'BrokenPipeError' in error_msg or 'broken pipe' in error_msg.lower() or 'EPIPE' in error_msg:
+                    session['error'] = "Connection interrupted. Please try again."
+                else:
+                    session['error'] = f"Error: {error_msg}"
         
         # Redirect to GET to prevent form resubmission on refresh
-        return redirect(url_for('index'))
+        try:
+            return redirect(url_for('index'))
+        except BrokenPipeError:
+            # Client disconnected during redirect, handle gracefully
+            return '', 204
+        except OSError as e:
+            # Handle OS-level errors including broken pipe
+            if hasattr(e, 'errno') and e.errno == errno.EPIPE:
+                return '', 204
+            raise
     
     # GET request - retrieve data from session and clear it
     ticket_id = session.pop('ticket_id', '')
@@ -481,31 +561,53 @@ def index():
     # Get recent tickets for display (limit to 3 initially to prevent UI from growing)
     recent_tickets = get_recent_tickets(limit=3)
     
-    return render_template('index.html', ticket_id=ticket_id, error=error, recent_tickets=recent_tickets, **fields)
+    try:
+        return render_template('index.html', ticket_id=ticket_id, error=error, recent_tickets=recent_tickets, **fields)
+    except (BrokenPipeError, OSError) as e:
+        # Client disconnected while rendering, handle gracefully
+        if hasattr(e, 'errno') and e.errno == errno.EPIPE:
+            # Silently ignore broken pipe during response
+            return '', 204
+        raise
 
 @app.route('/api/ticket/<ticket_id>')
 def get_ticket_api(ticket_id):
     """API endpoint to get a ticket summary by ID."""
-    ticket = get_ticket_summary(ticket_id)
-    if ticket:
-        return jsonify(format_ticket_for_display(ticket))
-    return jsonify({'error': 'Ticket not found'}), 404
+    try:
+        ticket = get_ticket_summary(ticket_id)
+        if ticket:
+            return jsonify(format_ticket_for_display(ticket))
+        return jsonify({'error': 'Ticket not found'}), 404
+    except (BrokenPipeError, OSError) as e:
+        if hasattr(e, 'errno') and e.errno == errno.EPIPE:
+            return '', 204
+        raise
 
 @app.route('/api/tickets/recent')
 def get_recent_tickets_api():
     """API endpoint to get recent tickets."""
-    limit = request.args.get('limit', 10, type=int)
-    tickets = get_recent_tickets(limit=limit)
-    return jsonify(tickets)
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        tickets = get_recent_tickets(limit=limit)
+        return jsonify(tickets)
+    except (BrokenPipeError, OSError) as e:
+        if hasattr(e, 'errno') and e.errno == errno.EPIPE:
+            return '', 204
+        raise
 
 @app.route('/api/tickets/search')
 def search_tickets_api():
     """API endpoint to search tickets."""
-    query = request.args.get('q', '')
-    if not query:
-        return jsonify([])
-    tickets = search_tickets(query)
-    return jsonify(tickets)
+    try:
+        query = request.args.get('q', '')
+        if not query:
+            return jsonify([])
+        tickets = search_tickets(query)
+        return jsonify(tickets)
+    except (BrokenPipeError, OSError) as e:
+        if hasattr(e, 'errno') and e.errno == errno.EPIPE:
+            return '', 204
+        raise
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))
