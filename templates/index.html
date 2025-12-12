@@ -443,8 +443,6 @@
             </div>
         </div>
         
-        <!-- Search Results -->
-        <div id="search_results" class="mb-3" style="display: none;"></div>
         
         <!-- Recent Tickets -->
         <div id="recent_tickets">
@@ -525,6 +523,36 @@
         </h4>
           <pre>{{ root_cause }}</pre>
         {% endif %}
+        {% if issue_theme %}
+        <h4 class="output-heading">
+          <i class="fas fa-tags"></i> Issue Theme
+        </h4>
+          <div class="badge-modern badge-info-modern" style="font-size: 1rem; padding: 0.75rem 1.5rem;">
+            {{ issue_theme }}
+          </div>
+        {% endif %}
+        {% if root_cause_theme %}
+        <h4 class="output-heading">
+          <i class="fas fa-tags"></i> Root Cause Theme
+        </h4>
+          <div class="badge-modern badge-info-modern" style="font-size: 1rem; padding: 0.75rem 1.5rem;">
+            {{ root_cause_theme }}
+          </div>
+        {% endif %}
+        {% if is_documented_limitation or is_documented_prerequisite %}
+        <div class="alert alert-warning-modern alert-modern" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">
+          <strong><i class="fas fa-exclamation-triangle"></i> Documented {{ 'Limitation' if is_documented_limitation else 'Prerequisite' }}</strong>
+          <p class="mb-0 mt-2">{{ documentation_check_summary }}</p>
+          {% if documentation_references %}
+          <p class="mb-0 mt-2"><strong>Documentation References:</strong></p>
+          <ul class="mb-0">
+            {% for ref in documentation_references %}
+            <li><a href="{{ ref }}" target="_blank" style="color: white; text-decoration: underline;">{{ ref }}</a></li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+        {% endif %}
         {% if test_case_needed is not none %}
         <h4 class="output-heading">
           <i class="fas fa-clipboard-check"></i> Test Case Evaluation
@@ -565,18 +593,79 @@
           {% endif %}
         {% endif %}
         {% if test_case_needed %}
-          {% if test_case_description and test_case_description != "N/A - Test case not needed" %}
+          {% if test_cases and test_cases|length > 0 %}
+            {% for test_case in test_cases %}
+            <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 15px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid #667eea;">
+              <h4 class="output-heading" style="margin-top: 0;">
+                <i class="fas fa-clipboard-list"></i> Test Case {{ loop.index }}: {{ test_case.title if test_case.title else 'Test Case ' + loop.index|string }}
+              </h4>
+              {% if test_case.description %}
+              <h5 style="color: var(--text-primary); font-weight: 600; margin-top: 1rem;">
+                <i class="fas fa-info-circle"></i> Description
+              </h5>
+              <pre style="margin-bottom: 1rem;">{{ test_case.description }}</pre>
+              {% endif %}
+              {% if test_case.steps %}
+              <h5 style="color: var(--text-primary); font-weight: 600;">
+                <i class="fas fa-tasks"></i> Steps
+              </h5>
+              <pre>{{ test_case.steps }}</pre>
+              {% endif %}
+              {% if test_case.regression_needed is not none %}
+              <div style="margin-top: 1rem;">
+                {% if test_case.regression_needed %}
+                <span class="badge badge-modern badge-warning-modern">
+                  <i class="fas fa-exclamation-triangle"></i> Regression Test: Yes
+                </span>
+                {% else %}
+                <span class="badge badge-modern badge-info-modern">
+                  <i class="fas fa-info-circle"></i> Regression Test: No
+                </span>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          {% elif test_case_description and test_case_description != "N/A - Test case not needed" %}
+            <!-- Fallback to single test case format for backward compatibility -->
           <h4 class="output-heading">
             <i class="fas fa-list-alt"></i> Test Case Description
           </h4>
           <pre>{{ test_case_description }}</pre>
-        {% endif %}
           {% if test_case_steps and test_case_steps != "N/A - Test case not needed" %}
           <h4 class="output-heading">
             <i class="fas fa-tasks"></i> Test Case Steps
           </h4>
           <pre>{{ test_case_steps }}</pre>
           {% endif %}
+          {% endif %}
+          {% if recommended_solution and recommended_solution != "N/A - No solution research available" and recommended_solution != "N/A - Test case not needed" %}
+          <h4 class="output-heading">
+            <i class="fas fa-lightbulb"></i> Recommended Solution Approach
+          </h4>
+          <pre>{{ recommended_solution }}</pre>
+          {% endif %}
+          {% if additional_test_scenarios and additional_test_scenarios != "None identified" and additional_test_scenarios != "N/A - Test case not needed" %}
+          <h4 class="output-heading">
+            <i class="fas fa-plus-circle"></i> Additional Test Scenarios
+          </h4>
+          <pre>{{ additional_test_scenarios }}</pre>
+          {% endif %}
+        {% endif %}
+        {% if documentation_references and documentation_references|length > 0 %}
+        <h4 class="output-heading">
+          <i class="fas fa-book"></i> Documentation References
+        </h4>
+        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 4px solid #2196f3; border-radius: 12px; padding: 1.5rem;">
+          <ul style="margin: 0; padding-left: 1.5rem;">
+            {% for ref in documentation_references %}
+            <li style="margin-bottom: 0.5rem;"><a href="{{ ref }}" target="_blank" style="color: #1976d2; text-decoration: none; font-weight: 500;">{{ ref }}</a></li>
+            {% endfor %}
+          </ul>
+          {% if documentation_check_summary %}
+          <p style="margin-top: 1rem; margin-bottom: 0; font-size: 0.9rem; color: #555;"><em>{{ documentation_check_summary }}</em></p>
+          {% endif %}
+        </div>
         {% endif %}
     </div>
     {% endif %}
@@ -627,7 +716,7 @@
         return;
       }
       
-      const resultsDiv = document.getElementById('search_results');
+      // Search results removed
       resultsDiv.style.display = 'block';
       resultsDiv.innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm text-primary" role="status"></div><p class="mt-2 text-muted">Searching...</p></div>';
       
@@ -674,7 +763,7 @@
     // Clear search
     function clearSearch() {
       document.getElementById('search_tickets').value = '';
-      document.getElementById('search_results').style.display = 'none';
+      // Search results removed
     }
 
     // Load ticket from database and display it
@@ -748,6 +837,30 @@
         html += `<h4 class="output-heading"><i class="fas fa-search"></i> Root Cause</h4><pre>${escapeHtml(ticket.root_cause)}</pre>`;
       }
       
+      if (ticket.issue_theme) {
+        html += `<h4 class="output-heading"><i class="fas fa-tags"></i> Issue Theme</h4><div class="badge-modern badge-info-modern" style="font-size: 1rem; padding: 0.75rem 1.5rem;">${escapeHtml(ticket.issue_theme)}</div>`;
+      }
+      
+      if (ticket.root_cause_theme) {
+        html += `<h4 class="output-heading"><i class="fas fa-tags"></i> Root Cause Theme</h4><div class="badge-modern badge-info-modern" style="font-size: 1rem; padding: 0.75rem 1.5rem;">${escapeHtml(ticket.root_cause_theme)}</div>`;
+      }
+      
+      // Show documented limitation/prerequisite warning
+      if (ticket.is_documented_limitation || ticket.is_documented_prerequisite) {
+        const type = ticket.is_documented_limitation ? 'Limitation' : 'Prerequisite';
+        html += `<div class="alert alert-warning-modern alert-modern" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">
+          <strong><i class="fas fa-exclamation-triangle"></i> Documented ${type}</strong>
+          <p class="mb-0 mt-2">${escapeHtml(ticket.documentation_check_summary || '')}</p>`;
+        if (ticket.documentation_references && ticket.documentation_references.length > 0) {
+          html += `<p class="mb-0 mt-2"><strong>Documentation References:</strong></p><ul class="mb-0">`;
+          ticket.documentation_references.forEach(ref => {
+            html += `<li><a href="${escapeHtml(ref)}" target="_blank" style="color: white; text-decoration: underline;">${escapeHtml(ref)}</a></li>`;
+          });
+          html += `</ul>`;
+        }
+        html += `</div>`;
+      }
+      
       if (ticket.test_case_needed !== undefined) {
         html += `<h4 class="output-heading"><i class="fas fa-clipboard-check"></i> Test Case Evaluation</h4>`;
         if (ticket.test_case_needed) {
@@ -777,13 +890,57 @@
         }
       }
       
-      if (ticket.test_case_needed && ticket.test_case_description && ticket.test_case_description !== 'N/A - Test case not needed') {
+      // Display multiple test cases if available
+      if (ticket.test_case_needed && ticket.test_cases && Array.isArray(ticket.test_cases) && ticket.test_cases.length > 0) {
+        ticket.test_cases.forEach((testCase, index) => {
+          const title = testCase.title || `Test Case ${index + 1}`;
+          html += `<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 15px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid #667eea;">`;
+          html += `<h4 class="output-heading" style="margin-top: 0;"><i class="fas fa-clipboard-list"></i> ${escapeHtml(title)}</h4>`;
+          if (testCase.description) {
+            html += `<h5 style="color: var(--text-primary); font-weight: 600; margin-top: 1rem;"><i class="fas fa-info-circle"></i> Description</h5>`;
+            html += `<pre style="margin-bottom: 1rem;">${escapeHtml(testCase.description)}</pre>`;
+          }
+          if (testCase.steps) {
+            html += `<h5 style="color: var(--text-primary); font-weight: 600;"><i class="fas fa-tasks"></i> Steps</h5>`;
+            html += `<pre>${escapeHtml(testCase.steps)}</pre>`;
+          }
+          if (testCase.regression_needed !== undefined && testCase.regression_needed !== null) {
+            const regressionBadge = testCase.regression_needed ? 
+              '<span class="badge badge-modern badge-warning-modern"><i class="fas fa-exclamation-triangle"></i> Regression Test: Yes</span>' :
+              '<span class="badge badge-modern badge-info-modern"><i class="fas fa-info-circle"></i> Regression Test: No</span>';
+            html += `<div style="margin-top: 1rem;">${regressionBadge}</div>`;
+          }
+          html += `</div>`;
+        });
+      } else if (ticket.test_case_needed && ticket.test_case_description && ticket.test_case_description !== 'N/A - Test case not needed') {
+        // Fallback to single test case format for backward compatibility
         html += `<h4 class="output-heading"><i class="fas fa-list-alt"></i> Test Case Description</h4><pre>${escapeHtml(ticket.test_case_description)}</pre>`;
+        if (ticket.test_case_steps && ticket.test_case_steps !== 'N/A - Test case not needed') {
+          html += `<h4 class="output-heading"><i class="fas fa-tasks"></i> Test Case Steps</h4><pre>${escapeHtml(ticket.test_case_steps)}</pre>`;
+        }
       }
       
-      if (ticket.test_case_needed && ticket.test_case_steps && ticket.test_case_steps !== 'N/A - Test case not needed') {
-        html += `<h4 class="output-heading"><i class="fas fa-tasks"></i> Test Case Steps</h4><pre>${escapeHtml(ticket.test_case_steps)}</pre>`;
+      if (ticket.recommended_solution && ticket.recommended_solution !== 'N/A - No solution research available' && ticket.recommended_solution !== 'N/A - Test case not needed') {
+        html += `<h4 class="output-heading"><i class="fas fa-lightbulb"></i> Recommended Solution Approach</h4><pre>${escapeHtml(ticket.recommended_solution)}</pre>`;
       }
+      
+      if (ticket.additional_test_scenarios && ticket.additional_test_scenarios !== 'None identified' && ticket.additional_test_scenarios !== 'N/A - Test case not needed') {
+        html += `<h4 class="output-heading"><i class="fas fa-plus-circle"></i> Additional Test Scenarios</h4><pre>${escapeHtml(ticket.additional_test_scenarios)}</pre>`;
+      }
+      
+      if (ticket.documentation_references && ticket.documentation_references.length > 0) {
+        html += `<h4 class="output-heading"><i class="fas fa-book"></i> Documentation References</h4>`;
+        html += `<div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 4px solid #2196f3; border-radius: 12px; padding: 1.5rem;"><ul style="margin: 0; padding-left: 1.5rem;">`;
+        ticket.documentation_references.forEach(ref => {
+          html += `<li style="margin-bottom: 0.5rem;"><a href="${escapeHtml(ref)}" target="_blank" style="color: #1976d2; text-decoration: none; font-weight: 500;">${escapeHtml(ref)}</a></li>`;
+        });
+        html += `</ul>`;
+        if (ticket.documentation_check_summary) {
+          html += `<p style="margin-top: 1rem; margin-bottom: 0; font-size: 0.9rem; color: #555;"><em>${escapeHtml(ticket.documentation_check_summary)}</em></p>`;
+        }
+        html += `</div>`;
+      }
+      
       
       if (html) {
         cardBody.innerHTML = html;
@@ -900,7 +1057,16 @@
         .catch(error => {
           console.error('Error checking for more tickets:', error);
         });
+      
     });
+
+    // Utility function for HTML escaping
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
   </script>
 </body>
 </html>

@@ -1,0 +1,677 @@
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 308-569-213
+127.0.0.1 - - [28/Nov/2025 18:29:11] "GET / HTTP/1.1" 200 -
+ * Detected change in '/Users/arunsunderraj/Documents/myScripts/zendesk_ticket_summarizer/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 308-569-213
+127.0.0.1 - - [28/Nov/2025 18:31:51] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:31:52] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:31:52] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:32:25] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:32:25] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:32:25] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:33:22] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:33:22] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:33:22] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:34:38] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:34:38] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:34:38] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:34:45] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:34:45] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:34:45] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:34:53] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:34:53] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:34:53] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:35:10] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:35:11] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:35:11] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:36:28] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:36:28] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:36:28] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:37:19] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:37:19] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:37:19] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:37:42] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:37:42] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:37:43] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:38:03] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:38:03] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:38:03] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:38:27] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:38:27] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:38:28] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:39:26] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:39:26] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:39:26] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:39:56] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:39:56] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:39:56] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:40:44] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:40:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:40:44] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:41:06] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:41:06] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:41:06] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:42:05] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:42:05] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:42:05] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:42:57] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:42:57] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:42:57] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: PostgreSQL TOAST data WAL null values site:stackoverflow.com
+  Searching: Handling TOAST data in PostgreSQL for Redshift site:github.com
+  Searching: PostgreSQL TOAST best practices for testing site:medium.com
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: PostgreSQL replication slot corruption read replica site:stackoverflow.com
+  Searching: best practices testing PostgreSQL replication slots site:github.com
+  Searching: PostgreSQL pg_current_wal_lsn() read replica issue site:medium.com
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: WAL file parsing table name quotes issue site:stackoverflow.com
+  Searching: database table name quotes duplication issue site:github.com
+  Searching: handling quoted table names in WAL files blog
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: logical replication slot conflict WAL replay solution site:stackoverflow.com
+  Searching: best practices testing logical replication slot WAL conflict site:github.com
+  Searching: logical replication slot invalidation issue resolution blog
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: Stack Overflow pipeline issue 'Include New Objects' false table recreated
+  Searching: GitHub data pipeline table deletion recreation unexpected ingestion
+  Searching: best practices testing data pipeline table recreation issue
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: PostgreSQL replication slot size growing solutions
+  Searching: best practices for testing replication slot issues PostgreSQL
+  Searching: PostgreSQL ingestion job runtime increased lag solutions
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: Hevo connection manual termination logical replication disruption site:stackoverflow.com
+  Searching: rds.logical_replication parameter change not taking effect after database upgrade site:github.com
+  Searching: best practices for testing logical replication issues after database upgrade site:medium.com
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: wal_sender_timeout 30 seconds timeout issue solution site:stackoverflow.com
+  Searching: wal_sender_timeout best practices testing site:github.com
+  Searching: pipeline stuck due to wal_sender_timeout similar issues site:medium.com
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: Stack Overflow parse user-defined datatype vector ingestion delay
+  Searching: GitHub issues parser support for user-defined datatype vector
+  Searching: Technical blog post handling new column datatype ingestion delay
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: ingestion process timeout error large transaction site:stackoverflow.com
+  Searching: replication slot dropped data loss site:github.com
+  Searching: best practices testing large transaction ingestion timeout
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: invalid JSON value "" coupon_meta site:stackoverflow.com
+  Searching: handling invalid JSON values in database GitHub
+  Searching: fixing invalid JSON fields technical blog
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: Stack Overflow large backfill operation ingestion delay solution
+  Searching: GitHub issues backfill operation system capacity overwhelmed
+  Searching: Technical blog post handling large data backfill efficiently
+Phase 3: Generating enhanced test case with solution context...127.0.0.1 - - [28/Nov/2025 18:43:19] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:43:19] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:43:19] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:43:38] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:43:38] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:43:38] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:44:11] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:44:11] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:44:11] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:44:29] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:44:29] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:44:29] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:45:15] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:45:15] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:45:15] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:47:19] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [28/Nov/2025 18:47:19] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Nov/2025 18:47:19] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [30/Nov/2025 11:45:26] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Nov/2025 11:45:27] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+127.0.0.1 - - [30/Nov/2025 11:45:39] "[32mPOST / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [30/Nov/2025 11:45:39] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Nov/2025 11:45:39] "GET /api/tickets/recent?limit=4 HTTP/1.1" 200 -
+ * Detected change in '/Users/arunsunderraj/Documents/myScripts/zendesk_ticket_summarizer/services/openai_service.py', reloading
+
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: enable optimization data processing speed US2 region site:stackoverflow.com
+  Searching: intermittent latencies data processing US2 region GitHub
+  Searching: best practices testing data processing speed optimization blog
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: TOAST data handling WAL omission Stack Overflow
+  Searching: PostgreSQL TOAST backfill null values GitHub issues
+  Searching: best practices testing TOAST data handling PostgreSQL
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: XMIN ingestion mode retired version 2.20 solutions site:stackoverflow.com
+  Searching: XMIN ingestion mode retired version 2.20 GitHub issues
+  Searching: Full Load mode high ingestion billing workaround blog
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: pipeline schedule delay data not captured site:stackoverflow.com
+  Searching: best practices for testing data pipeline schedule issues site:github.com
+  Searching: handling delayed data updates in ETL pipelines site:medium.com
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+DEBUG Zendesk header: {'Authorization': 'Basic c291cmFiaEBoZXZvZGF0YS5jb20vdG9rZW46enlXZlNzOWZmZWNrcFlwNkx3b3c3VTNWdnJkcW1ocnZMZXNZeXpuaw=='}
+Phase 1: Analyzing ticket...
+Phase 3: Generating search queries...
+Searching for solutions using 5 queries...
+  Searching: TOAST data handling WAL omitted values site:stackoverflow.com
+  Searching: PostgreSQL TOAST backfill null values GitHub
+  Searching: Best practices testing TOAST data handling PostgreSQL
+Phase 3: Generating enhanced test case with solution context...
+Enhanced test case generation complete!
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 308-569-213
+ * Detected change in '/Users/arunsunderraj/Documents/myScripts/zendesk_ticket_summarizer/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 308-569-213
+ * Detected change in '/Users/arunsunderraj/Documents/myScripts/zendesk_ticket_summarizer/services/openai_service.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 308-569-213
+2025-12-03T13:29:23.920698 - issue theme is Encryption Handling Error - 58652
+2025-12-03T13:31:05.751415 - issue theme is Pipeline Table Addition - 58684
+2025-12-03T13:32:08.728838 - issue theme is AWS WAF SQL Injection Blocking - 58698
+2025-12-03T14:32:21.882450 - issue theme is AWS CloudFront WAF SQL Injection Blocking - 58698
+2025-12-03T14:39:46.781511 - issue theme is Schema Name Inconsistency - 58717
+2025-12-03T14:40:45.328618 - issue theme is Replication Slot Error - 58746
+2025-12-03T14:41:18.577186 - issue theme is Database Connection Failure - 58758
+2025-12-03T14:42:32.151467 - issue theme is Task Completion Handling - 58759
+2025-12-03T14:43:42.860069 - issue theme is PostgreSQL Replication Slot Invalidated - 58762
+2025-12-03T14:45:30.235437 - issue theme is Case Sensitivity in SQL Queries - 58820
+2025-12-03T14:45:48.633860 - issue theme is Pipeline Object Count Discrepancy - 58833
+2025-12-03T14:46:08.382734 - issue theme is Data Ingestion Failure - 58839
+2025-12-03T14:47:14.208252 - issue theme is Timestamp Precision Mismatch - 58841
+2025-12-03T14:50:15.202540 - issue theme is Timestamp Precision Mismatch - 58841
+2025-12-03T14:51:33.213068 - issue theme is Automapping Unmapped Event Alert - 58843
+2025-12-03T14:51:43.166577 - issue theme is Historical Data Sync Query - 58893
+2025-12-03T14:51:59.014006 - issue theme is Pipeline Latency and Data Loss - 58905
+2025-12-03T14:52:26.719861 - issue theme is SSH Verification Error - 58908
+2025-12-03T14:53:46.240469 - issue theme is Ingestion Task Duration - 58912
+2025-12-03T14:56:11.081869 - issue theme is Delta Timestamp Column Selection - 58914
+2025-12-03T15:09:59.378679 - issue theme is Pipeline Ingestion Error - 58916
+2025-12-03T15:10:13.931589 - issue theme is Pipeline Object Mapping - 58928
+2025-12-03T15:10:24.528335 - issue theme is Post-Pipeline Object Historical Load - 58942
+2025-12-03T15:10:36.745470 - issue theme is Table Visibility in PostgreSQL - 58944
+2025-12-03T15:13:49.200409 - issue theme is Event Quota Exhaustion and Historical Data Load Management - 58958
+2025-12-03T15:14:52.063718 - issue theme is Unicode Encoding Error - 58989
+2025-12-03T15:15:13.851662 - issue theme is Event Size Limit Handling - 58993
+2025-12-03T15:15:41.899865 - issue theme is Event Size Limitation in Kafka - 58997
+2025-12-03T15:15:58.814033 - issue theme is WAL Accumulation Impact - 58998
+2025-12-03T15:16:34.150554 - issue theme is Pipeline Load Configuration - 59003
+2025-12-03T15:16:50.024551 - issue theme is Pipeline Load Configuration - 59004
+2025-12-03T15:17:24.935267 - issue theme is Chat Support Conversation Loss - 59005
+2025-12-03T15:17:37.883342 - issue theme is Table Mode Ingestion Delete Handling - 59009
+2025-12-03T15:18:00.380616 - issue theme is Hevo Meta Column Handling - 59033
+2025-12-03T15:18:34.578017 - issue theme is Local Database Connection Error - 59034
+2025-12-03T15:27:02.988173 - issue theme is Local Database Connection Error - 59034
+2025-12-03T15:27:03.030683 - root cause theme is Localhost Access Limitation - 59034
+2025-12-03T15:27:16.838486 - issue theme is Logical Replication Error - 59037
+2025-12-03T15:27:16.852184 - root cause theme is Read Replica Limitation - 59037
+2025-12-03T15:28:02.038397 - issue theme is Data Duplication and Deletion - 59095
+2025-12-03T15:28:02.062053 - root cause theme is Root Cause Not Identified - 59095
+2025-12-03T15:29:16.085211 - issue theme is Delete Operation Replication - 59096
+2025-12-03T15:29:16.155382 - root cause theme is Order Mismatch in Processing - 59096
+2025-12-03T15:30:02.834592 - issue theme is Historical Load Progress Discrepancy - 59098
+2025-12-03T15:30:02.856373 - root cause theme is Root Cause Not Identified - 59098
+2025-12-03T15:30:22.990679 - issue theme is Data Loading Bottleneck - 59105
+2025-12-03T15:30:23.011002 - root cause theme is Ingestion and Loading Cycle Mismatch - 59105
+2025-12-03T15:30:46.136243 - issue theme is Pipeline Ingestion Delay - 59110
+2025-12-03T15:30:46.145887 - root cause theme is Case Sensitivity Error - 59110
+2025-12-03T15:31:14.341906 - issue theme is Data Ingestion Frequency - 59126
+2025-12-03T15:31:14.362443 - root cause theme is Root Cause Not Identified - 59126
+2025-12-03T15:33:16.009908 - issue theme is Ingestion Frequency Adjustment - 59128
+2025-12-03T15:33:16.028347 - root cause theme is Root Cause Not Identified - 59128
+2025-12-03T15:33:32.363122 - issue theme is Hevo Data Transfer Methods - 59135
+2025-12-03T15:33:32.375205 - root cause theme is Root Cause Not Identified - 59135
+2025-12-03T15:34:48.405867 - issue theme is Transformation Logic Error - 59145
+2025-12-03T15:34:48.426687 - root cause theme is Type Handling Error - 59145
+2025-12-03T15:35:11.937201 - issue theme is Pipeline Plugin Change - 59146
+2025-12-03T15:35:11.958795 - root cause theme is Root Cause Not Identified - 59146
+2025-12-03T15:35:28.227598 - issue theme is Timestamp Column Case Mismatch - 59167
+2025-12-03T15:35:28.268135 - root cause theme is Configuration Case Sensitivity Error - 59167
+2025-12-03T15:47:11.447803 - issue theme is Replication Slot Invalidation - 59175
+2025-12-03T15:47:11.462775 - root cause theme is Replication Slot Conflict - 59175
+2025-12-03T15:51:07.951937 - issue theme is Logical Replication Slot Invalidation - 59178
+2025-12-03T15:51:07.970523 - root cause theme is WAL Replay Conflict - 59178
+2025-12-03T15:54:19.319865 - issue theme is WAL Replay Conflict - 59185
+2025-12-03T15:54:19.359744 - root cause theme is WAL Replay Configuration - 59185
+2025-12-03T15:55:24.363582 - issue theme is Database Connection Failure - 59191
+2025-12-03T15:55:24.382094 - root cause theme is Root Cause Not Identified - 59191
+2025-12-03T15:56:30.246859 - issue theme is Data Type Mismatch - 59194
+2025-12-03T15:56:30.264113 - root cause theme is Data Type Mapping Error - 59194
+2025-12-03T15:59:59.564002 - issue theme is PostgreSQL Connection Failure - 59196
+2025-12-03T15:59:59.584906 - root cause theme is AWS NAT Instance Traffic Block - 59196
+2025-12-03T16:00:16.378588 - issue theme is Data Synchronization Discrepancy - 59205
+2025-12-03T16:00:16.400603 - root cause theme is Root Cause Not Identified - 59205
+2025-12-03T16:00:31.530143 - issue theme is Pipeline Usage Visualization - 59257
+2025-12-03T16:00:31.543813 - root cause theme is Root Cause Not Identified - 59257
+2025-12-03T16:00:48.793106 - issue theme is Data Sync Error - 59261
+2025-12-03T16:00:48.814530 - root cause theme is Root Cause Not Identified - 59261
+2025-12-04T15:11:19.739881 - issue theme is Historical Load Ingestion - 55969
+2025-12-04T15:11:19.743306 - root cause theme is Inactive Object Configuration - 55969
+2025-12-04T15:12:57.699738 - issue theme is JSON Value Trimming - 55976
+2025-12-04T15:12:57.732209 - root cause theme is Data Type Mismatch - 55976
+2025-12-04T15:14:51.484991 - issue theme is BinLog Offset Stuck - 55998
+2025-12-04T15:14:51.520892 - root cause theme is Root Cause Not Identified - 55998
+2025-12-04T15:15:42.619364 - issue theme is Time Data Replication Error - 56010
+2025-12-04T15:15:42.641935 - root cause theme is Data Type Support Limitation - 56010
+2025-12-04T15:18:21.890277 - issue theme is Pipeline Ingestion Timeout - 56027
+2025-12-04T15:18:21.917243 - root cause theme is Root Cause Not Identified - 56027
+2025-12-04T15:21:05.007844 - issue theme is MySQL Binlog Replication Error - 56099
+2025-12-04T15:21:05.050040 - root cause theme is Deprecated SQL Command - 56099
+2025-12-04T15:22:16.444222 - issue theme is Binlog Access Denied - 56176
+2025-12-04T15:22:16.489804 - root cause theme is Insufficient Privileges - 56176
+2025-12-04T15:23:44.571804 - issue theme is Timestamp Conversion Discrepancy - 56183
+2025-12-04T15:23:44.590733 - root cause theme is Timezone Configuration Error - 56183
+2025-12-04T15:44:19.473365 - issue theme is Pipeline Ingestion Status - 56254
+2025-12-04T15:44:19.493997 - root cause theme is UI Inconsistency and Configuration Behavior - 56254
+2025-12-04T15:45:45.506268 - issue theme is Data Duplication in Pipeline - 56255
+2025-12-04T15:45:45.525709 - root cause theme is Root Cause Not Identified - 56255
+2025-12-04T15:47:27.633219 - issue theme is Timestamp Discrepancy in Data Load - 56309
+2025-12-04T15:47:27.655130 - root cause theme is BinLog UTC Conversion Error - 56309
+2025-12-04T15:49:36.165113 - issue theme is SSH Connection Error - 56328
+2025-12-04T15:49:36.189603 - root cause theme is Root Cause Not Identified - 56328
+2025-12-04T15:51:04.697187 - issue theme is Schema Mismatch Error - 56348
+2025-12-04T15:51:04.719554 - root cause theme is Schema Parsing Error - 56348
+2025-12-04T15:52:24.286441 - issue theme is Timestamp Ingestion Configuration - 56374
+2025-12-04T15:52:24.308295 - root cause theme is Root Cause Not Identified - 56374
+2025-12-04T15:54:01.095609 - issue theme is High Ingestion Volume - 56444
+2025-12-04T15:54:01.115001 - root cause theme is Multiple Record Updates - 56444
+2025-12-04T15:54:31.678738 - issue theme is Data Ingestion Discrepancy - 56472
+2025-12-04T15:54:31.701627 - root cause theme is Root Cause Not Identified - 56472
+2025-12-04T15:55:30.436968 - issue theme is Data Mismatch in Pipeline - 56502
+2025-12-04T15:55:30.460010 - root cause theme is Root Cause Not Identified - 56502
+2025-12-04T15:58:04.891532 - issue theme is Binlog Data Ingestion Failure - 56504
+2025-12-04T15:58:04.910326 - root cause theme is Schema Discrepancy in Binlogs - 56504
+2025-12-04T16:00:15.750087 - issue theme is Data Ingestion Delay - 56634
+2025-12-04T16:00:15.775808 - root cause theme is Scheduler Task Corruption - 56634
+2025-12-05T11:18:04.103076 - issue theme is Data Ingestion Delay - 56700
+2025-12-05T11:18:04.105403 - root cause theme is Root Cause Not Identified - 56700
+2025-12-05T11:29:32.113028 - issue theme is Intermittent Record Loading Failure - 56703
+2025-12-05T11:29:32.167387 - root cause theme is Cache Refresh Issue - 56703
+2025-12-05T11:30:11.322213 - issue theme is Ingestion Pipeline Lag - 56708
+2025-12-05T11:30:11.387311 - root cause theme is Root Cause Not Identified - 56708
+2025-12-05T11:31:55.388770 - issue theme is BinLog Ingestion Failure - 56787
+2025-12-05T11:31:55.436748 - root cause theme is MySQL Large Transaction Bug - 56787
+2025-12-05T11:34:08.076729 - issue theme is Binlog Transaction Stuck - 56835
+2025-12-05T11:34:08.110228 - root cause theme is Large Transaction Processing - 56835
+2025-12-05T11:35:14.386470 - issue theme is Binlog Replication Failure - 56888
+2025-12-05T11:35:14.481561 - root cause theme is Deprecated Command Usage - 56888
+2025-12-05T11:35:34.507024 - issue theme is Data Mismatch Investigation - 56894
+2025-12-05T11:35:34.592867 - root cause theme is Root Cause Not Identified - 56894
+2025-12-05T11:37:37.876357 - issue theme is Schema Change Replication Issue - 56931
+2025-12-05T11:37:37.901460 - root cause theme is Schema Mismatch Due to Change - 56931
+2025-12-05T11:38:51.301397 - issue theme is Schema Change Replication Issue - 56931
+2025-12-05T11:38:51.319100 - root cause theme is Schema Mismatch Due to Change - 56931
+2025-12-05T11:39:51.958594 - issue theme is Pipeline Ingestion Stuck - 56938
+2025-12-05T11:39:51.978020 - root cause theme is Cluster Outage Impact - 56938
+2025-12-05T11:40:55.071027 - issue theme is Pipeline Ingestion Delay - 56965
+2025-12-05T11:40:55.095778 - root cause theme is Root Cause Not Identified - 56965
+2025-12-05T11:42:44.956683 - issue theme is Data Ingestion Failure - 56966
+2025-12-05T11:42:44.975673 - root cause theme is Historical Load Configuration Missing - 56966
+2025-12-05T11:43:59.061171 - issue theme is Pipeline Ingestion Latency - 56975
+2025-12-05T11:43:59.083531 - root cause theme is Connection Termination and Kafka System Issues - 56975
+2025-12-05T11:46:12.235676 - issue theme is Pipeline Failure Post-Upgrade - 56976
+2025-12-05T11:46:12.275002 - root cause theme is Root Cause Not Identified - 56976
+2025-12-05T11:46:35.719725 - issue theme is Ingestion Volume Discrepancy - 57020
+2025-12-05T11:46:35.746519 - root cause theme is Root Cause Not Identified - 57020
+2025-12-05T11:47:56.089000 - issue theme is Data Ingestion Timeout - 57024
+2025-12-05T11:47:56.120362 - root cause theme is Root Cause Not Identified - 57024
+2025-12-05T11:48:47.126751 - issue theme is Pipeline Event Overconsumption - 57036
+2025-12-05T11:48:47.144512 - root cause theme is Increased Source Event Ingestion - 57036
+2025-12-05T11:49:14.049551 - issue theme is Pipeline Host Change Delay - 57051
+2025-12-05T11:49:14.077526 - root cause theme is Root Cause Not Identified - 57051
+2025-12-05T11:50:32.664723 - issue theme is Boolean Value Interpretation - 57054
+2025-12-05T11:50:32.690824 - root cause theme is Outdated Binlog Parser - 57054
+2025-12-05T11:56:48.616993 - issue theme is Data Synchronization Error - 57061
+2025-12-05T11:56:48.668556 - root cause theme is Historical Load Process Limitation - 57061
+2025-12-05T11:57:21.489192 - issue theme is DR Activity Impact - 57071
+2025-12-05T11:57:21.510820 - root cause theme is Root Cause Not Identified - 57071
+2025-12-05T11:58:36.071483 - issue theme is RDS Proxy TLS Requirement - 57073
+2025-12-05T11:58:36.104492 - root cause theme is TLS Configuration Missing - 57073
+2025-12-05T12:00:10.014879 - issue theme is Ingestion Pipeline Delay - 57091
+2025-12-05T12:00:10.073853 - root cause theme is Large Record Processing - 57091
+2025-12-05T12:00:48.956309 - issue theme is MySQL Database Connection Error - 57131
+2025-12-05T12:00:48.980795 - root cause theme is Binlog Configuration or Privilege Missing - 57131
+2025-12-05T12:01:33.176937 - issue theme is Deletion Sync Failure - 57133
+2025-12-05T12:01:33.198306 - root cause theme is Root Cause Not Identified - 57133
+2025-12-05T12:02:09.813242 - issue theme is Data Ingestion Delay - 57138
+2025-12-05T12:02:09.834871 - root cause theme is Root Cause Not Identified - 57138
+2025-12-05T12:03:34.201547 - issue theme is Data Mismatch in Pipeline - 57184
+2025-12-05T12:03:34.236256 - root cause theme is Modified Field Update Missing - 57184
+2025-12-05T12:04:07.694076 - issue theme is MySQL Command Deprecation - 57202
+2025-12-05T12:04:07.722105 - root cause theme is Command Deprecation in MySQL - 57202
+2025-12-05T12:04:33.479301 - issue theme is Binlog Parsing Error - 57207
+2025-12-05T12:04:33.503756 - root cause theme is Exception Handling Failure - 57207
+2025-12-05T12:32:47.552528 - issue theme is Binlog Parsing Error - 57207
+2025-12-05T12:32:47.656846 - root cause theme is Exception Handling Failure - 57207
+2025-12-05T12:33:55.785190 - issue theme is Data Ingestion Delay - 57138
+2025-12-05T12:33:55.833636 - root cause theme is Root Cause Not Identified - 57138
+2025-12-05T12:35:00.523524 - issue theme is Data Validation Error - 57209
+2025-12-05T12:35:00.542414 - root cause theme is Merge Table Configuration Conflict - 57209
+2025-12-05T12:36:26.887653 - issue theme is Pipeline Streaming Mode - 57215
+2025-12-05T12:36:26.914182 - root cause theme is Root Cause Not Identified - 57215
+2025-12-05T12:36:49.991892 - issue theme is 1. String Length Limit Exceeded
+2. Duplicated Column Name Error - 57224
+2025-12-05T12:36:50.022719 - root cause theme is 1. String Length Exceeded
+2. Root Cause Not Identified - 57224
+2025-12-05T12:37:38.090247 - issue theme is Pipeline Ingestion Task Missing - 57228
+2025-12-05T12:37:38.122900 - root cause theme is Root Cause Not Identified - 57228
+2025-12-05T12:49:43.002251 - issue theme is Pipeline Ingestion Task Missing - 57228
+2025-12-05T12:49:43.114262 - root cause theme is Root Cause Not Identified - 57228
+2025-12-05T12:52:55.555116 - issue theme is Pipeline Ingestion Task Missing - 57228
+2025-12-05T12:52:55.571739 - root cause theme is Root Cause Not Identified - 57228
+2025-12-05T12:53:51.557315 - issue theme is GTID Feature Implementation - 57229
+2025-12-05T12:53:51.578181 - root cause theme is Root Cause Not Identified - 57229
+2025-12-05T12:54:52.450174 - issue theme is Data Type Misinterpretation - 57232
+2025-12-05T12:54:52.473348 - root cause theme is Outdated Binlog Parser - 57232
+2025-12-05T12:56:03.748155 - issue theme is Pipeline Offset Alignment - 57241
+2025-12-05T12:56:03.769010 - root cause theme is Root Cause Not Identified - 57241
+2025-12-08T10:40:19.817826 - issue theme is Database Connection Failure - 57371
+2025-12-08T10:40:19.819056 - root cause theme is DNS Caching Issue - 57371
+2025-12-08T10:40:45.904163 - issue theme is BinLog Expiry and Encrypted Field Support - 57448
+2025-12-08T10:40:45.922955 - root cause theme is BinLog Retention Configuration and Product Limitation - 57448
+2025-12-08T10:42:59.444492 - issue theme is Database Connection Error - 57488
+2025-12-08T10:42:59.470606 - root cause theme is Excessive Database Connections - 57488
+2025-12-08T10:43:30.250857 - issue theme is Database Connection Failure - 57503
+2025-12-08T10:43:30.261494 - root cause theme is Root Cause Not Identified - 57503
+2025-12-08T10:43:55.984709 - issue theme is Binlog Data Ingestion Failure - 57505
+2025-12-08T10:43:56.003927 - root cause theme is Root Cause Not Identified - 57505
+2025-12-08T10:44:30.551272 - issue theme is Duplicate Record Creation - 57519
+2025-12-08T10:44:30.569067 - root cause theme is Field Change Impact - 57519
+2025-12-08T11:53:43.441182 - issue theme is Data Ingestion Delay - 57536
+2025-12-08T11:53:43.458300 - root cause theme is RDS Instance Downtime - 57536
+2025-12-08T12:01:44.976213 - issue theme is Ingestion Frequency Change - 57544
+2025-12-08T12:01:44.997119 - root cause theme is Root Cause Not Identified - 57544
+2025-12-08T12:03:20.492517 - issue theme is Schema Mismatch in BinLog - 57545
+2025-12-08T12:03:20.512183 - root cause theme is DDL Change Not Logged - 57545
+2025-12-08T12:08:49.127151 - issue theme is Data Ingestion Bottleneck - 57560
+2025-12-08T12:08:49.147669 - root cause theme is Single Connection Limitation - 57560
+2025-12-08T12:10:06.098387 - issue theme is Ingestion Lag in Pipelines - 57587
+2025-12-08T12:10:06.121673 - root cause theme is Large Transaction Processing - 57587
+2025-12-08T12:22:32.535900 - issue theme is Table Ingestion Failure - 57612
+2025-12-08T12:22:32.556153 - root cause theme is Backend Flag Misconfiguration - 57612
+2025-12-08T12:25:57.579113 - issue theme is Pipeline Data Fetch Failure - 57616
+2025-12-08T12:25:57.595853 - root cause theme is Root Cause Not Identified - 57616
+2025-12-08T12:27:56.739102 - issue theme is Ingestion Timestamp Discrepancy - 57692
+2025-12-08T12:27:56.772284 - root cause theme is Data Resynchronization Impact - 57692
+2025-12-08T12:29:08.884239 - issue theme is Binlog File Purge - 57756
+2025-12-08T12:29:08.902854 - root cause theme is Binlog File Unavailability - 57756
+2025-12-08T12:30:43.714282 - issue theme is Log-Based Pipeline Scheduling - 57760
+2025-12-08T12:30:43.740764 - root cause theme is Root Cause Not Identified - 57760
+2025-12-08T12:31:09.840853 - issue theme is MySQL Binlog Ingestion Support - 57773
+2025-12-08T12:31:09.864273 - root cause theme is Root Cause Not Identified - 57773
+2025-12-08T12:34:03.675472 - issue theme is Binlog Ingestion Support - 57774
+2025-12-08T12:34:03.704933 - root cause theme is Root Cause Not Identified - 57774
+2025-12-08T12:34:25.280047 - issue theme is Data Ingestion Timing Discrepancy - 57775
+2025-12-08T12:34:25.300039 - root cause theme is Backdated Timestamp Ingestion - 57775
+2025-12-08T12:34:49.431034 - issue theme is Timestamp Timezone Discrepancy - 57781
+2025-12-08T12:34:49.443450 - root cause theme is BinLog Timezone Handling - 57781
+2025-12-08T12:36:12.503022 - issue theme is Redshift Load Timeout - 57847
+2025-12-08T12:36:12.527534 - root cause theme is Redshift Resource Constraints - 57847
+2025-12-08T13:07:10.535322 - issue theme is API Request Timeout - 57857
+2025-12-08T13:07:10.596584 - root cause theme is Metadata Fetch Timeout - 57857
+2025-12-08T13:07:59.034174 - issue theme is Historical Data Load Performance - 57867
+2025-12-08T13:07:59.063037 - root cause theme is Root Cause Not Identified - 57867
+2025-12-08T13:09:06.316366 - issue theme is Schema Parsing Error - 57878
+2025-12-08T13:09:06.334688 - root cause theme is Schema Mismatch Handling - 57878
+2025-12-08T13:09:43.093060 - issue theme is Ingestion Delay - 57880
+2025-12-08T13:09:43.109481 - root cause theme is Root Cause Not Identified - 57880
+2025-12-08T13:11:10.780419 - issue theme is Job Status Update Deadlock - 57881
+2025-12-08T13:11:10.807057 - root cause theme is MySQL Table Deadlock - 57881
+2025-12-08T13:13:19.321560 - issue theme is Redshift Column Size Limit - 57931
+2025-12-08T13:13:19.374371 - root cause theme is Excessive Data Size in Column - 57931
+2025-12-08T13:17:01.083983 - issue theme is Primary Key Configuration Error - 57954
+2025-12-08T13:17:01.106503 - root cause theme is Auto Mapping Misconfiguration - 57954
+2025-12-09T11:49:02.132799 - issue theme is Duplicate Pipeline Numbers - 58039
+2025-12-09T11:49:02.134506 - root cause theme is Database Anomaly - 58039
+2025-12-09T11:49:33.680043 - issue theme is Binlog File Corruption - 58048
+2025-12-09T11:49:33.705453 - root cause theme is Disk Space Limitation - 58048
+2025-12-09T11:50:59.019528 - issue theme is Data Ingestion Discrepancy - 58084
+2025-12-09T11:50:59.040279 - root cause theme is Root Cause Not Identified - 58084
+2025-12-09T11:52:09.872729 - issue theme is Event Sampling Configuration - 58093
+2025-12-09T11:52:09.893663 - root cause theme is Root Cause Not Identified - 58093
+2025-12-09T11:52:31.929666 - issue theme is MySQL Authentication Support - 58095
+2025-12-09T11:52:31.954117 - root cause theme is Root Cause Not Identified - 58095
+2025-12-09T11:54:02.233373 - issue theme is Binlog Metadata Handling - 58110
+2025-12-09T11:54:02.251521 - root cause theme is Root Cause Not Identified - 58110
+2025-12-09T11:58:51.056886 - issue theme is SSH Connectivity Failure - 58138
+2025-12-09T11:58:51.088786 - root cause theme is SSH Connection Error - 58138
+2025-12-09T11:59:58.249429 - issue theme is Binlog Incremental Ingestion Failure - 58146
+2025-12-09T11:59:58.275304 - root cause theme is Binlog Format Configuration Error - 58146
+2025-12-09T12:00:16.127573 - issue theme is Pipeline Historical Load Freeze - 58164
+2025-12-09T12:00:16.150191 - root cause theme is Paused Historical Load - 58164
+2025-12-09T12:00:36.889145 - issue theme is Data Ingestion Delay - 58220
+2025-12-09T12:00:36.910990 - root cause theme is Historical Data Backlog - 58220
+2025-12-09T12:02:10.090994 - issue theme is Binlog Read Failure - 58346
+2025-12-09T12:02:10.118072 - root cause theme is Binlog Corruption - 58346
+2025-12-09T12:03:43.277866 - issue theme is Automatic Table Inclusion Failure - 58358
+2025-12-09T12:03:43.299743 - root cause theme is Root Cause Not Identified - 58358
+2025-12-09T12:04:58.707763 - issue theme is Duplicate Entry Error - 58369
+2025-12-09T12:04:58.733559 - root cause theme is WAL Logging Omission - 58369
+2025-12-09T12:08:23.029283 - issue theme is MySQL Deadlock in Job Status Update - 58473
+2025-12-09T12:08:23.053616 - root cause theme is Transaction Deadlock in MySQL - 58473
+2025-12-09T12:10:11.209644 - issue theme is Schema Change Detection - 58519
+2025-12-09T12:10:11.240173 - root cause theme is BinLog Transaction Logging - 58519
+2025-12-09T12:11:53.483809 - issue theme is Binlog Delay - 58558
+2025-12-09T12:11:53.505557 - root cause theme is Skipped Events in Binlog - 58558
+2025-12-09T12:14:31.010355 - issue theme is Historical Load Memory Error - 58568
+2025-12-09T12:14:31.032775 - root cause theme is Task Configuration Mismatch - 58568
+2025-12-09T13:03:44.228913 - issue theme is Pipeline Binlog Delay - 58582
+2025-12-09T13:03:44.264527 - root cause theme is Skipped Object Processing - 58582
+2025-12-09T13:05:05.762737 - issue theme is Pipeline Ingestion Failure - 58602
+2025-12-09T13:05:05.780620 - root cause theme is Parser Version Issue - 58602
+2025-12-09T13:06:31.754321 - issue theme is Pipeline Sync Delay - 58614
+2025-12-09T13:06:31.775998 - root cause theme is Large Data Volume Ingestion - 58614
+2025-12-09T13:06:50.823223 - issue theme is Binary Logging Configuration - 58743
+2025-12-09T13:06:50.845503 - root cause theme is Configuration File Inclusion - 58743
+2025-12-10T13:54:35.125255 - issue theme is MySQL BinLog Offset Misalignment - 58794
+2025-12-10T13:54:35.162693 - root cause theme is Heartbeat Event Handling Defect - 58794
+2025-12-10T13:58:43.911404 - issue theme is Binlog Position Corruption / Unavailable Binlog - 58891
+2025-12-10T13:58:43.949133 - root cause theme is Binlog File Rotation / Stale Offset Position - 58891
+2025-12-10T14:03:14.155347 - issue theme is Binlog Offset Position Corruption - 58891
+2025-12-10T14:03:14.177789 - root cause theme is Binlog File Rotation Mismatch - 58891
+2025-12-10T14:03:26.575653 - issue theme is Binlog Offset Corruption/Invalid Position - 58891
+2025-12-10T14:03:26.600185 - root cause theme is Source Binlog File Corruption/Rotation - 58891
+2025-12-10T14:07:04.845884 - issue theme is Filter State Persistence - 58926
+2025-12-10T14:07:05.597718 - root cause theme is Root Cause Not Identified - 58926
+2025-12-10T14:07:30.339051 - issue theme is Pipeline Source Configuration Button Disabled - 58953
+2025-12-10T14:07:30.360185 - root cause theme is Root Cause Not Identified - 58953
+2025-12-10T14:09:18.724447 - issue theme is Data Ingestion Timeout Failure - 59017
+2025-12-10T14:09:18.751995 - root cause theme is Query Timeout Configuration Mismatch - 59017
+2025-12-10T14:12:39.655308 - issue theme is Data Ingestion Timeout Failure - 59017
+2025-12-10T14:12:39.683034 - root cause theme is Query Timeout Configuration Mismatch - 59017
+2025-12-10T14:29:27.846567 - issue theme is Data Ingestion Timeout Failures - 59017
+2025-12-10T14:29:27.848465 - root cause theme is Read Timeout Configuration Mismatch - 59017
+2025-12-10T15:00:45.876076 - issue theme is Error - 59017
+2025-12-10T15:00:45.877716 - root cause theme is Error - 59017
+2025-12-10T15:16:35.195876 - issue theme is Data Ingestion Timeout - 59017
+2025-12-10T15:16:35.254532 - root cause theme is Timeout Configuration Mismatch - 59017
+2025-12-10T15:17:17.761896 - issue theme is Binlog Update Failure - 59138
+2025-12-10T15:17:17.819505 - root cause theme is Root Cause Not Identified - 59138
+2025-12-10T15:19:55.070584 - issue theme is Binlog File Corruption - 59143
+2025-12-10T15:19:55.097328 - root cause theme is Binlog Data Corruption - 59143
+2025-12-10T15:20:36.931151 - issue theme is Pipeline Ingestion Delay - 59301
+2025-12-10T15:20:36.952968 - root cause theme is Parallelization Disabled - 59301
+2025-12-10T15:21:16.490369 - issue theme is MySQL Secure Connection Error - 59309
+2025-12-10T15:21:16.666283 - root cause theme is SSH Encryption Misconfiguration - 59309
+2025-12-10T15:22:08.630635 - issue theme is Delta-Timestamp Ingestion Failure - 59337
+2025-12-10T15:22:08.654329 - root cause theme is Timestamp Offset Misconfiguration - 59337
+2025-12-10T15:22:46.648480 - issue theme is BinLog Position Tracking - 59387
+2025-12-10T15:22:46.671535 - root cause theme is BinLog Overflow Limitation - 59387
+2025-12-10T15:23:28.484082 - issue theme is MySQL Binlog Offset Error - 59388
+2025-12-10T15:23:28.506781 - root cause theme is Heartbeat Event Handling - 59388
+2025-12-10T15:23:52.104347 - issue theme is Invalid Binlog Offset - 59394
+2025-12-10T15:23:52.377335 - root cause theme is Binlog Offset Misalignment - 59394
+2025-12-10T15:24:45.799621 - issue theme is Pipeline Execution Delay - 59486
+2025-12-10T15:24:45.830659 - root cause theme is Connection Saturation - 59486
+2025-12-10T15:25:34.048586 - issue theme is Binlog Corruption in Real-Time Pipelines - 59505
+2025-12-10T15:25:34.071782 - root cause theme is Binlog File Corruption - 59505
+2025-12-10T15:26:36.353362 - issue theme is Data Loading Delay - 59529
+2025-12-10T15:26:36.375758 - root cause theme is Root Cause Not Identified - 59529
+2025-12-10T15:26:54.294374 - issue theme is Historical Data Ingestion Delay - 59576
+2025-12-10T15:26:54.315568 - root cause theme is Root Cause Not Identified - 59576
+2025-12-10T15:27:51.079060 - issue theme is MySQL Binlog Heartbeat Handling - 59628
+2025-12-10T15:27:51.103670 - root cause theme is Heartbeat Event Parsing Error - 59628
+2025-12-10T15:28:15.847986 - issue theme is Column Modification Impact - 59631
+2025-12-10T15:28:15.872653 - root cause theme is Root Cause Not Identified - 59631
+2025-12-10T15:28:33.702980 - issue theme is Row Delete Detection - 59639
+2025-12-10T15:28:33.726311 - root cause theme is Root Cause Not Identified - 59639
+2025-12-10T15:29:08.746239 - issue theme is Row Delete Detection - 59640
+2025-12-10T15:29:08.790489 - root cause theme is Binlog Change Bypass - 59640
+2025-12-11T12:38:54.138307 - issue theme is Data Sorting and Parsing - 56033
+2025-12-11T12:38:54.139980 - root cause theme is Collation Mismatch - 56033
+2025-12-11T12:40:03.023106 - issue theme is ELB Timeout Error - 56006
+2025-12-11T12:40:03.025462 - root cause theme is Timeout Configuration Limit - 56006
+2025-12-11T12:40:45.697170 - issue theme is Data Mismatch in DW_PurchaseOrderTripUID - 56041
+2025-12-11T12:40:45.698311 - root cause theme is Polling Logic Error with CT Version - 56041
+2025-12-11T12:41:32.261013 - issue theme is Database Name Update Error - 56079
+2025-12-11T12:41:32.263241 - root cause theme is Metadata Update Missing - 56079
+2025-12-11T13:57:26.529619 - issue theme is Resource Utilization Spike - 56242
+2025-12-11T13:57:26.531625 - root cause theme is Root Cause Not Identified - 56242
+2025-12-11T13:57:55.021978 - issue theme is Column Name Sanitization - 56342
+2025-12-11T13:57:55.024750 - root cause theme is Regex Pattern Limitation - 56342
+2025-12-11T13:58:42.761830 - issue theme is SQL Server Connection Closure - 56536
+2025-12-11T13:58:42.764058 - root cause theme is High Load Connection Timeout - 56536
+2025-12-11T14:15:04.452872 - issue theme is Pipeline Connection Closure - 56536
+2025-12-11T14:15:04.456066 - root cause theme is Database Load-Induced Connection Closure - 56536
+2025-12-11T14:15:56.397773 - issue theme is Data Mismatch in Incremental Ingestion - 56568
+2025-12-11T14:15:56.400441 - root cause theme is Change Tracking Version Bug - 56568
+2025-12-11T14:17:14.557244 - issue theme is Data Mismatch in Pipeline - 56661
+2025-12-11T14:17:14.559107 - root cause theme is Root Cause Not Identified - 56661
+2025-12-11T14:19:10.521888 - issue theme is Pipeline Scheduling Configuration - 56725
+2025-12-11T14:19:10.532750 - root cause theme is Root Cause Not Identified - 56725
+2025-12-11T14:27:19.301007 - issue theme is Pipeline Scheduling Configuration - 56725
+2025-12-11T14:27:19.316247 - root cause theme is Root Cause Not Identified - 56725
+2025-12-11T14:33:55.204651 - issue theme is Pipeline Scheduling Configuration - 56725
+2025-12-11T14:33:55.207118 - root cause theme is Root Cause Not Identified - 56725
+2025-12-11T14:34:51.987090 - issue theme is Change Tracking Pipeline Issue - 56802
+2025-12-11T14:34:51.988900 - root cause theme is Root Cause Not Identified - 56802
+2025-12-11T14:35:36.332899 - issue theme is Data Mismatch in Pipeline - 56861
+2025-12-11T14:35:36.334838 - root cause theme is Timestamp Update Failure - 56861
+2025-12-11T14:37:23.829849 - issue theme is No Issue Reported - 56882
+2025-12-11T14:37:23.831896 - root cause theme is Root Cause Not Identified - 56882
+2025-12-11T14:37:48.591090 - issue theme is Data Load Delay - 56892
+2025-12-11T14:37:48.592633 - root cause theme is Root Cause Not Identified - 56892
+2025-12-11T14:44:51.992633 - issue theme is Change Tracking Query Failures - 56961
+2025-12-11T14:44:51.994502 - root cause theme is Pipeline #80: Change Tracking Version Outdated
+Pipeline #97: Permission Denied on Database - 56961
+2025-12-11T14:46:50.505925 - issue theme is Spatial Data Format Handling - 56977
+2025-12-11T14:46:50.506998 - root cause theme is Geometry Type Parsing Unsupported - 56977
+2025-12-11T14:49:49.519672 - issue theme is Ingestion Query Mode Limitation - 57027
+2025-12-11T14:49:49.524771 - root cause theme is Root Cause Not Identified - 57027
+2025-12-11T14:52:43.870074 - issue theme is Data Type Mismatch - 57045
+2025-12-11T14:52:43.873734 - root cause theme is Incrementing Column Data Type - 57045
+2025-12-11T15:03:31.271283 - issue theme is Data Type Mismatch - 57112
+2025-12-11T15:03:31.273908 - root cause theme is Data Type Conversion Error - 57112
+2025-12-11T15:05:11.084637 - issue theme is Mapping Deletion and CT Expiration - 57201
+2025-12-11T15:05:11.086428 - root cause theme is Destination Configuration Changes - 57201
+2025-12-11T15:15:06.375492 - issue theme is Object Visibility on UI - 57211
+2025-12-11T15:15:06.376891 - root cause theme is Root Cause Not Identified - 57211
+2025-12-11T15:15:31.206794 - issue theme is UUID Primary Key Handling - 57225
+2025-12-11T15:15:31.211142 - root cause theme is Primary Key Configuration Error - 57225
+2025-12-11T15:16:15.974093 - issue theme is SQL Query Syntax Error - 57240
+2025-12-11T15:16:15.976063 - root cause theme is Invalid SQL Syntax - 57240
+2025-12-11T15:23:03.513831 - issue theme is User Role Configuration - 57319
+2025-12-11T15:23:03.515629 - root cause theme is SQL Command Execution - 57319

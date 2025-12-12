@@ -1,13 +1,16 @@
 # Zendesk Ticket Summarizer
 
-An AI-powered Flask web application that analyzes Zendesk tickets using OpenAI's GPT-4o model to generate comprehensive summaries, identify root causes, and automatically determine if test cases are needed.
+An AI-powered Flask web application that analyzes Zendesk tickets using Claude API (claude-3-5-sonnet) to generate comprehensive summaries, identify root causes, and automatically determine if test cases are needed.
 
 ## Features
 
-- 🤖 **AI-Powered Analysis**: Uses OpenAI GPT-4o to analyze ticket conversations
+- 🤖 **AI-Powered Analysis**: Uses Claude API (claude-3-5-sonnet-20241022) to analyze ticket conversations
 - 📝 **Automatic Summarization**: Generates issue descriptions and root cause analysis
 - ✅ **Test Case Evaluation**: Intelligently determines if functional test cases are needed
 - 🔄 **Regression Test Assessment**: Evaluates whether tests should be added to regression suite
+- 🔍 **Solution Research**: Automatically searches web and Stack Overflow for solutions and best practices
+- 💡 **Recommended Solutions**: Provides solution approaches based on research
+- 📋 **Enhanced Test Cases**: Generates comprehensive test cases incorporating industry best practices
 - 💾 **Data Persistence**: Stores all ticket summaries in SQLite database
 - 🔍 **Search Functionality**: Search and retrieve previously analyzed tickets
 - 🎨 **Modern UI**: Beautiful, responsive web interface with gradient styling
@@ -15,7 +18,8 @@ An AI-powered Flask web application that analyzes Zendesk tickets using OpenAI's
 ## Prerequisites
 
 - Python 3.8 or higher
-- OpenAI API key
+- Claude API key (Anthropic)
+- OpenAI API key (for web search functionality only)
 - Zendesk API credentials (Basic Auth)
 - Access to Zendesk instance (currently configured for `hevodata.zendesk.com`)
 
@@ -42,11 +46,21 @@ An AI-powered Flask web application that analyzes Zendesk tickets using OpenAI's
    
    Create a `.env` file in the root directory:
    ```env
-   OPENAI_API_KEY=your_openai_api_key_here
+   CLAUDE_API_KEY=your_claude_api_key_here
+   OPENAI_API_KEY=your_openai_api_key_here  # Required for web search functionality
    ZENDESK_AUTH=your_base64_encoded_zendesk_credentials
    SECRET_KEY=your_flask_secret_key_here
    PORT=5001
+   
+   # Optional: For enhanced search functionality
+   SERP_API_KEY=your_serpapi_key_here  # For web search (get free at serpapi.com)
+   STACKOVERFLOW_API_KEY=your_stackoverflow_key_here  # Optional, for Stack Overflow search
    ```
+   
+   **Note:** 
+   - `CLAUDE_API_KEY` is required for ticket analysis and test case generation
+   - `OPENAI_API_KEY` is required for web search functionality (the app uses OpenAI's web search API)
+   - The enhanced search feature (web/Stack Overflow) is optional. The app will work without it, but test cases will be generated without solution research.
    
    **Zendesk Authentication:**
    - Format: `email/token:api_token` (for API token) or `email:password` (for password)
@@ -132,7 +146,8 @@ The application stores ticket summaries in a SQLite database with the following 
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `OPENAI_API_KEY` | Your OpenAI API key | Yes | - |
+| `CLAUDE_API_KEY` | Your Claude API key (Anthropic) | Yes | - |
+| `OPENAI_API_KEY` | Your OpenAI API key (for web search only) | Yes | - |
 | `ZENDESK_AUTH` | Base64-encoded Zendesk credentials | Yes | - |
 | `SECRET_KEY` | Flask session secret key | No | `dev-secret-key-change-in-production` |
 | `PORT` | Server port | No | `5001` |
@@ -148,15 +163,21 @@ ZENDESK_URL_TEMPLATE = "https://your-domain.zendesk.com/api/v2/tickets/{}/commen
 ## How It Works
 
 1. **Ticket Retrieval**: Fetches public comments from Zendesk API for the specified ticket ID
-2. **AI Analysis**: Sends the conversation to OpenAI GPT-4o with a detailed prompt
-3. **Response Parsing**: Extracts structured information from AI response:
+2. **Phase 1 - AI Analysis**: Analyzes the conversation to extract:
    - Issue description
    - Root cause
-   - Test case evaluation (Yes/No with reasoning)
-   - Regression test evaluation (Yes/No/N/A with reasoning)
-   - Test case description and steps (if applicable)
-4. **Storage**: Saves the analysis to SQLite database for future reference
-5. **Display**: Renders the results in a user-friendly web interface
+   - Test case needed decision (Yes/No)
+3. **Phase 2 - Solution Research** (if test case needed):
+   - Generates search queries from root cause
+   - Searches web (via SerpAPI) and Stack Overflow for solutions
+   - Finds best practices and similar resolved issues
+4. **Phase 3 - Enhanced Test Case Generation**:
+   - Generates test case incorporating research findings
+   - Includes recommended solution approach
+   - Adds additional test scenarios from similar issues
+   - Provides solution-aware test steps
+5. **Storage**: Saves the enhanced analysis to SQLite database
+6. **Display**: Renders all results including research sources in the web interface
 
 ## Test Case Evaluation Logic
 
@@ -186,7 +207,7 @@ The AI uses sophisticated logic to determine if test cases are needed:
 
 - Never commit `.env` file to version control
 - Use strong `SECRET_KEY` in production
-- Keep your OpenAI API key secure
+- Keep your Claude API key and OpenAI API key secure
 - Rotate Zendesk credentials regularly
 - The database file contains sensitive ticket information - ensure proper access controls
 
@@ -198,8 +219,13 @@ The AI uses sophisticated logic to determine if test cases are needed:
    - Ensure your `.env` file exists and contains `ZENDESK_AUTH`
    - Verify the Base64 encoding is correct
 
-2. **"OpenAI API error"**
-   - Check your `OPENAI_API_KEY` is valid
+2. **"Claude API error"**
+   - Check your `CLAUDE_API_KEY` is valid
+   - Verify you have sufficient API credits
+   - Check network connectivity
+   
+3. **"OpenAI API error" (web search)**
+   - Check your `OPENAI_API_KEY` is valid (required for web search)
    - Verify you have sufficient API credits
    - Check network connectivity
 
@@ -237,5 +263,5 @@ For issues or questions, please check:
 
 ---
 
-**Built with:** Flask, OpenAI GPT-4o, SQLite, Bootstrap 5
+**Built with:** Flask, Claude API (claude-3-5-sonnet), SQLite, Bootstrap 5
 
