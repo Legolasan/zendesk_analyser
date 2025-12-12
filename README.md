@@ -4,7 +4,7 @@ An AI-powered Flask web application that analyzes Zendesk tickets using Claude A
 
 ## Features
 
-- 🤖 **AI-Powered Analysis**: Uses Claude API (claude-3-5-sonnet-20241022) to analyze ticket conversations
+- 🤖 **AI-Powered Analysis**: Uses OpenAI API (GPT-4o) to analyze ticket conversations
 - 📝 **Automatic Summarization**: Generates issue descriptions and root cause analysis
 - ✅ **Test Case Evaluation**: Intelligently determines if functional test cases are needed
 - 🔄 **Regression Test Assessment**: Evaluates whether tests should be added to regression suite
@@ -18,8 +18,7 @@ An AI-powered Flask web application that analyzes Zendesk tickets using Claude A
 ## Prerequisites
 
 - Python 3.8 or higher
-- Claude API key (Anthropic)
-- OpenAI API key (for web search functionality only)
+- OpenAI API key (required for ticket analysis)
 - Zendesk API credentials (Basic Auth)
 - Access to Zendesk instance (currently configured for `hevodata.zendesk.com`)
 
@@ -27,8 +26,8 @@ An AI-powered Flask web application that analyzes Zendesk tickets using Claude A
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Legolasan/zd_test_case.git
-   cd zd_test_case
+   git clone https://github.com/Legolasan/zendesk_analyser.git
+   cd zendesk_analyser
    ```
 
 2. **Create a virtual environment**
@@ -46,21 +45,14 @@ An AI-powered Flask web application that analyzes Zendesk tickets using Claude A
    
    Create a `.env` file in the root directory:
    ```env
-   CLAUDE_API_KEY=your_claude_api_key_here
-   OPENAI_API_KEY=your_openai_api_key_here  # Required for web search functionality
+   OPENAI_API_KEY=your_openai_api_key_here  # Required for ticket analysis
    ZENDESK_AUTH=your_base64_encoded_zendesk_credentials
    SECRET_KEY=your_flask_secret_key_here
    PORT=5001
-   
-   # Optional: For enhanced search functionality
-   SERP_API_KEY=your_serpapi_key_here  # For web search (get free at serpapi.com)
-   STACKOVERFLOW_API_KEY=your_stackoverflow_key_here  # Optional, for Stack Overflow search
    ```
    
    **Note:** 
-   - `CLAUDE_API_KEY` is required for ticket analysis and test case generation
-   - `OPENAI_API_KEY` is required for web search functionality (the app uses OpenAI's web search API)
-   - The enhanced search feature (web/Stack Overflow) is optional. The app will work without it, but test cases will be generated without solution research.
+   - `OPENAI_API_KEY` is required for ticket analysis and test case generation
    
    **Zendesk Authentication:**
    - Format: `email/token:api_token` (for API token) or `email:password` (for password)
@@ -97,6 +89,78 @@ An AI-powered Flask web application that analyzes Zendesk tickets using Claude A
    - Use the search box to find previously analyzed tickets
    - Browse recent tickets in the sidebar
    - Click "Load" on any ticket to view its full analysis
+
+## Railway Deployment
+
+This application is configured for deployment on Railway. Follow these steps to deploy:
+
+### Prerequisites
+- Railway account ([railway.app](https://railway.app))
+- GitHub repository (already set up)
+- All required API keys and credentials
+
+### Deployment Steps
+
+1. **Create Railway Project**
+   - Go to [railway.app](https://railway.app)
+   - Click "New Project"
+   - Select "Deploy from GitHub repo"
+   - Choose the `zendesk_analyser` repository
+
+2. **Configure Environment Variables**
+   
+   Go to the "Variables" tab in your Railway project and add the following:
+   
+   | Variable | Description | Required |
+   |----------|-------------|----------|
+   | `OPENAI_API_KEY` | Your OpenAI API key | Yes |
+   | `ZENDESK_AUTH` | Base64-encoded Zendesk credentials | Yes |
+   | `SECRET_KEY` | Flask session secret key (generate with: `python -c "import secrets; print(secrets.token_hex(32))"`) | Yes |
+   | `RAILWAY_ENVIRONMENT` | Set to `production` to disable debug mode | Recommended |
+   | `PORT` | Automatically set by Railway | No (auto) |
+   
+   **Generate SECRET_KEY:**
+   ```bash
+   python -c "import secrets; print(secrets.token_hex(32))"
+   ```
+
+3. **Deploy**
+   - Railway will automatically detect the Flask application
+   - It will use the `Procfile` to start the application with gunicorn
+   - The application will be available at the Railway-provided URL
+
+4. **Verify Deployment**
+   - Check the Railway logs for any errors
+   - Visit the provided Railway URL
+   - Test by analyzing a sample ticket
+
+### Railway-Specific Configuration
+
+- **Procfile**: The application includes a `Procfile` that Railway uses to start the app:
+  ```
+  web: gunicorn app:app --bind 0.0.0.0:$PORT
+  ```
+
+- **Port Configuration**: The application automatically uses the `PORT` environment variable provided by Railway
+
+- **Debug Mode**: Debug mode is automatically disabled when `RAILWAY_ENVIRONMENT=production` is set
+
+- **Database**: The SQLite database will be created automatically on first run. For production, consider using Railway's PostgreSQL service for better reliability.
+
+### Troubleshooting Railway Deployment
+
+1. **Application won't start**
+   - Check Railway logs for errors
+   - Verify all required environment variables are set
+   - Ensure `gunicorn` is in `requirements.txt`
+
+2. **Port binding errors**
+   - Verify the `Procfile` uses `$PORT` variable
+   - Check that `app.py` uses `0.0.0.0` as host
+
+3. **Environment variable issues**
+   - Double-check all variables are set in Railway dashboard
+   - Verify variable names match exactly (case-sensitive)
 
 ## API Endpoints
 
@@ -146,11 +210,11 @@ The application stores ticket summaries in a SQLite database with the following 
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `CLAUDE_API_KEY` | Your Claude API key (Anthropic) | Yes | - |
-| `OPENAI_API_KEY` | Your OpenAI API key (for web search only) | Yes | - |
+| `OPENAI_API_KEY` | Your OpenAI API key | Yes | - |
 | `ZENDESK_AUTH` | Base64-encoded Zendesk credentials | Yes | - |
 | `SECRET_KEY` | Flask session secret key | No | `dev-secret-key-change-in-production` |
 | `PORT` | Server port | No | `5001` |
+| `RAILWAY_ENVIRONMENT` | Set to `production` to disable debug mode | No | - |
 
 ### Zendesk URL
 
@@ -207,7 +271,7 @@ The AI uses sophisticated logic to determine if test cases are needed:
 
 - Never commit `.env` file to version control
 - Use strong `SECRET_KEY` in production
-- Keep your Claude API key and OpenAI API key secure
+- Keep your OpenAI API key secure
 - Rotate Zendesk credentials regularly
 - The database file contains sensitive ticket information - ensure proper access controls
 
@@ -219,13 +283,8 @@ The AI uses sophisticated logic to determine if test cases are needed:
    - Ensure your `.env` file exists and contains `ZENDESK_AUTH`
    - Verify the Base64 encoding is correct
 
-2. **"Claude API error"**
-   - Check your `CLAUDE_API_KEY` is valid
-   - Verify you have sufficient API credits
-   - Check network connectivity
-   
-3. **"OpenAI API error" (web search)**
-   - Check your `OPENAI_API_KEY` is valid (required for web search)
+2. **"OpenAI API error"**
+   - Check your `OPENAI_API_KEY` is valid
    - Verify you have sufficient API credits
    - Check network connectivity
 
@@ -263,5 +322,5 @@ For issues or questions, please check:
 
 ---
 
-**Built with:** Flask, Claude API (claude-3-5-sonnet), SQLite, Bootstrap 5
+**Built with:** Flask, OpenAI API (GPT-4o), SQLite, Bootstrap 5, Gunicorn
 
