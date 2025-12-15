@@ -10,17 +10,124 @@ from zendesk_auth import zendesk_auth
 from services.openai_service import EnhancedOpenAIService
 import errno
 
+# PostgreSQL support for Railway deployment
+try:
+    import psycopg2
+    import psycopg2.extras
+    POSTGRES_AVAILABLE = True
+except ImportError:
+    POSTGRES_AVAILABLE = False
+
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-ZENDESK_URL_TEMPLATE = "https://hevodata.zendesk.com/api/v2/tickets/{}/comments"
+ZENDESK_TICKET_URL_TEMPLATE = "https://hevodata.zendesk.com/api/v2/tickets/{}"
+ZENDESK_COMMENTS_URL_TEMPLATE = "https://hevodata.zendesk.com/api/v2/tickets/{}/comments"
+
+# Database configuration - uses PostgreSQL if DATABASE_URL is set, otherwise SQLite
+DATABASE_URL = os.environ.get('DATABASE_URL')
+USE_POSTGRES = DATABASE_URL is not None and POSTGRES_AVAILABLE
 DB_PATH = os.path.join(os.path.dirname(__file__), 'ticket_summaries.db')
+
+def get_db_connection():
+    """Get a database connection - PostgreSQL for Railway, SQLite for local."""
+    if USE_POSTGRES:
+        # Railway provides DATABASE_URL in format: postgresql://user:pass@host:port/db
+        conn = psycopg2.connect(DATABASE_URL)
+        return conn
+    else:
+        return sqlite3.connect(DB_PATH)
 
 openai_service = EnhancedOpenAIService(api_key=OPENAI_API_KEY, model="gpt-4o") if OPENAI_API_KEY else None
 
 def init_db():
-    """Initialize the SQLite database and create tables if they don't exist."""
+    """Initialize the database and create tables if they don't exist.
+    Supports both PostgreSQL (Railway) and SQLite (local development).
+    """
+    if USE_POSTGRES:
+        _init_postgres_db()
+    else:
+        _init_sqlite_db()
+
+def _init_postgres_db():
+    """Initialize PostgreSQL database for Railway deployment."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Create table with PostgreSQL syntax
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS ticket_summaries (
+                id SERIAL PRIMARY KEY,
+                ticket_id TEXT NOT NULL UNIQUE,
+                issue_description TEXT,
+                root_cause TEXT,
+                test_case_needed INTEGER,
+                test_case_needed_reason TEXT,
+                regression_test_needed INTEGER,
+                regression_test_needed_reason TEXT,
+                test_case_description TEXT,
+                test_case_steps TEXT,
+                recommended_solution TEXT,
+                search_queries_used TEXT,
+                search_results_summary TEXT,
+                additional_test_scenarios TEXT,
+                test_cases TEXT,
+                num_test_cases INTEGER,
+                documentation_references TEXT,
+                is_documented_limitation INTEGER,
+                is_documented_prerequisite INTEGER,
+                documentation_check_summary TEXT,
+                issue_theme TEXT,
+                root_cause_theme TEXT,
+                ai_provider TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Add columns if they don't exist (for existing databases)
+        columns_to_add = [
+            'recommended_solution TEXT',
+            'search_queries_used TEXT',
+            'search_results_summary TEXT',
+            'additional_test_scenarios TEXT',
+            'test_cases TEXT',
+            'num_test_cases INTEGER',
+            'documentation_references TEXT',
+            'is_documented_limitation INTEGER',
+            'is_documented_prerequisite INTEGER',
+            'documentation_check_summary TEXT',
+            'issue_theme TEXT',
+            'root_cause_theme TEXT',
+            'ai_provider TEXT'
+        ]
+        
+        for col_def in columns_to_add:
+            col_name = col_def.split()[0]
+            try:
+                cursor.execute(f'ALTER TABLE ticket_summaries ADD COLUMN {col_def}')
+            except psycopg2.errors.DuplicateColumn:
+                conn.rollback()  # PostgreSQL requires rollback after error
+            except Exception:
+                conn.rollback()
+        
+        # Create index on ticket_id for faster lookups
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_ticket_id ON ticket_summaries(ticket_id)
+        ''')
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("PostgreSQL database initialized successfully")
+    except Exception as e:
+        print(f"Error initializing PostgreSQL database: {str(e)}")
+        raise
+
+def _init_sqlite_db():
+    """Initialize SQLite database for local development."""
     try:
         with sqlite3.connect(DB_PATH) as conn:
             conn.execute('''
@@ -106,13 +213,14 @@ def init_db():
             conn.execute('PRAGMA journal_mode=WAL')
             conn.commit()
     except sqlite3.Error as e:
-        print(f"Error initializing database: {str(e)}")
+        print(f"Error initializing SQLite database: {str(e)}")
         raise
 
 def save_ticket_summary(ticket_id, fields):
     """
-    Save ticket summary to SQLite database.
-    Uses INSERT OR REPLACE to handle updates gracefully.
+    Save ticket summary to database.
+    Supports both PostgreSQL (Railway) and SQLite (local development).
+    Uses INSERT OR REPLACE (SQLite) / ON CONFLICT (PostgreSQL) to handle updates.
     Args:
         ticket_id: Zendesk ticket ID
         fields: dict containing all summary fields
@@ -126,53 +234,134 @@ def save_ticket_summary(ticket_id, fields):
         print(f"ERROR: fields is not a dict for ticket {ticket_id}, type: {type(fields)}")
         return
     
+    # Prepare common data
+    regression_value = None
+    if fields.get('regression_test_needed') is not None:
+        regression_value = 1 if fields.get('regression_test_needed') else 0
+    
+    # Convert search_queries_used to JSON string if it's a list
+    search_queries_json = fields.get('search_queries_used', '')
+    if isinstance(search_queries_json, list):
+        search_queries_json = json.dumps(search_queries_json)
+    
+    # Convert test_cases to JSON string if it's a list
+    test_cases_json = ''
+    test_cases_list = fields.get('test_cases', [])
+    if isinstance(test_cases_list, list) and test_cases_list:
+        test_cases_json = json.dumps(test_cases_list)
+    num_test_cases = fields.get('num_test_cases', len(test_cases_list) if test_cases_list else 0)
+    
+    # Convert documentation_references to JSON if it's a list
+    doc_refs_json = fields.get('documentation_references', '')
+    if isinstance(doc_refs_json, list):
+        doc_refs_json = json.dumps(doc_refs_json)
+    
+    # Get themes and log them
+    issue_theme = fields.get('issue_theme', 'Unknown Theme')
+    root_cause_theme = fields.get('root_cause_theme', 'Unknown Root Cause Theme')
+    if issue_theme:
+        log_message = f"issue theme is {issue_theme} - {ticket_id}"
+        print(log_message)
+        try:
+            with open('app.log', 'a') as log_file:
+                log_file.write(f"{datetime.now().isoformat()} - {log_message}\n")
+        except Exception:
+            pass
+    if root_cause_theme:
+        log_message = f"root cause theme is {root_cause_theme} - {ticket_id}"
+        print(log_message)
+        try:
+            with open('app.log', 'a') as log_file:
+                log_file.write(f"{datetime.now().isoformat()} - {log_message}\n")
+        except Exception:
+            pass
+    
+    # Prepare values tuple
+    values = (
+        ticket_id,
+        fields.get('issue_description', ''),
+        fields.get('root_cause', ''),
+        issue_theme,
+        root_cause_theme,
+        1 if fields.get('test_case_needed') else 0,
+        fields.get('test_case_needed_reason', ''),
+        regression_value,
+        fields.get('regression_test_needed_reason', ''),
+        fields.get('test_case_description', ''),
+        fields.get('test_case_steps', ''),
+        fields.get('recommended_solution', ''),
+        search_queries_json,
+        fields.get('search_results_summary', ''),
+        fields.get('additional_test_scenarios', ''),
+        test_cases_json,
+        num_test_cases,
+        doc_refs_json,
+        1 if fields.get('is_documented_limitation') else 0,
+        1 if fields.get('is_documented_prerequisite') else 0,
+        fields.get('documentation_check_summary', ''),
+        'OpenAI',
+        datetime.now().isoformat()
+    )
+    
+    if USE_POSTGRES:
+        _save_ticket_summary_postgres(values)
+    else:
+        _save_ticket_summary_sqlite(values)
+
+def _save_ticket_summary_postgres(values):
+    """Save ticket summary to PostgreSQL database."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO ticket_summaries (
+                ticket_id, issue_description, root_cause, issue_theme, root_cause_theme,
+                test_case_needed, test_case_needed_reason,
+                regression_test_needed, regression_test_needed_reason,
+                test_case_description, test_case_steps,
+                recommended_solution, search_queries_used,
+                search_results_summary, additional_test_scenarios,
+                test_cases, num_test_cases,
+                documentation_references, is_documented_limitation,
+                is_documented_prerequisite, documentation_check_summary,
+                ai_provider, updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (ticket_id) DO UPDATE SET
+                issue_description = EXCLUDED.issue_description,
+                root_cause = EXCLUDED.root_cause,
+                issue_theme = EXCLUDED.issue_theme,
+                root_cause_theme = EXCLUDED.root_cause_theme,
+                test_case_needed = EXCLUDED.test_case_needed,
+                test_case_needed_reason = EXCLUDED.test_case_needed_reason,
+                regression_test_needed = EXCLUDED.regression_test_needed,
+                regression_test_needed_reason = EXCLUDED.regression_test_needed_reason,
+                test_case_description = EXCLUDED.test_case_description,
+                test_case_steps = EXCLUDED.test_case_steps,
+                recommended_solution = EXCLUDED.recommended_solution,
+                search_queries_used = EXCLUDED.search_queries_used,
+                search_results_summary = EXCLUDED.search_results_summary,
+                additional_test_scenarios = EXCLUDED.additional_test_scenarios,
+                test_cases = EXCLUDED.test_cases,
+                num_test_cases = EXCLUDED.num_test_cases,
+                documentation_references = EXCLUDED.documentation_references,
+                is_documented_limitation = EXCLUDED.is_documented_limitation,
+                is_documented_prerequisite = EXCLUDED.is_documented_prerequisite,
+                documentation_check_summary = EXCLUDED.documentation_check_summary,
+                ai_provider = EXCLUDED.ai_provider,
+                updated_at = EXCLUDED.updated_at
+        ''', values)
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error saving ticket summary to PostgreSQL: {str(e)}")
+
+def _save_ticket_summary_sqlite(values):
+    """Save ticket summary to SQLite database."""
     try:
         with sqlite3.connect(DB_PATH) as conn:
-            # Use INSERT OR REPLACE to update if ticket already exists
-            # Convert boolean to integer for database storage
-            regression_value = None
-            if fields.get('regression_test_needed') is not None:
-                regression_value = 1 if fields.get('regression_test_needed') else 0
-            
-            # Convert search_queries_used to JSON string if it's a list
-            search_queries_json = fields.get('search_queries_used', '')
-            if isinstance(search_queries_json, list):
-                search_queries_json = json.dumps(search_queries_json)
-            
-            # Convert test_cases to JSON string if it's a list
-            test_cases_json = ''
-            test_cases_list = fields.get('test_cases', [])
-            if isinstance(test_cases_list, list) and test_cases_list:
-                test_cases_json = json.dumps(test_cases_list)
-            num_test_cases = fields.get('num_test_cases', len(test_cases_list) if test_cases_list else 0)
-            
-            # Convert documentation_references to JSON if it's a list
-            doc_refs_json = fields.get('documentation_references', '')
-            if isinstance(doc_refs_json, list):
-                doc_refs_json = json.dumps(doc_refs_json)
-            
-            # Get themes and log them
-            issue_theme = fields.get('issue_theme', 'Unknown Theme')
-            root_cause_theme = fields.get('root_cause_theme', 'Unknown Root Cause Theme')
-            if issue_theme:
-                log_message = f"issue theme is {issue_theme} - {ticket_id}"
-                print(log_message)  # Log to console
-                # Also log to file if app.log exists
-                try:
-                    with open('app.log', 'a') as log_file:
-                        log_file.write(f"{datetime.now().isoformat()} - {log_message}\n")
-                except Exception:
-                    pass  # Silently fail if logging fails
-            if root_cause_theme:
-                log_message = f"root cause theme is {root_cause_theme} - {ticket_id}"
-                print(log_message)  # Log to console
-                # Also log to file if app.log exists
-                try:
-                    with open('app.log', 'a') as log_file:
-                        log_file.write(f"{datetime.now().isoformat()} - {log_message}\n")
-                except Exception:
-                    pass  # Silently fail if logging fails
-            
             conn.execute('''
                 INSERT OR REPLACE INTO ticket_summaries (
                     ticket_id, issue_description, root_cause, issue_theme, root_cause_theme,
@@ -186,67 +375,93 @@ def save_ticket_summary(ticket_id, fields):
                     is_documented_prerequisite, documentation_check_summary,
                     ai_provider, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                ticket_id,
-                fields.get('issue_description', ''),
-                fields.get('root_cause', ''),
-                issue_theme,
-                root_cause_theme,
-                1 if fields.get('test_case_needed') else 0,
-                fields.get('test_case_needed_reason', ''),
-                regression_value,
-                fields.get('regression_test_needed_reason', ''),
-                fields.get('test_case_description', ''),
-                fields.get('test_case_steps', ''),
-                fields.get('recommended_solution', ''),
-                search_queries_json,
-                fields.get('search_results_summary', ''),
-                fields.get('additional_test_scenarios', ''),
-                test_cases_json,
-                num_test_cases,
-                doc_refs_json,
-                1 if fields.get('is_documented_limitation') else 0,
-                1 if fields.get('is_documented_prerequisite') else 0,
-                fields.get('documentation_check_summary', ''),
-                'OpenAI',  # Always OpenAI now
-                datetime.now().isoformat()
-            ))
+            ''', values)
             conn.commit()
     except sqlite3.Error as e:
-        # Log error but don't fail the request
-        print(f"Error saving ticket summary to database: {str(e)}")
+        print(f"Error saving ticket summary to SQLite: {str(e)}")
     except Exception as e:
-        # Log error but don't fail the request
-        print(f"Unexpected error saving ticket summary to database: {str(e)}")
+        print(f"Unexpected error saving ticket summary to SQLite: {str(e)}")
 
 def get_ticket_summary(ticket_id):
     """
     Retrieve a ticket summary from the database by ticket_id.
+    Supports both PostgreSQL (Railway) and SQLite (local development).
     Returns dict with ticket data or None if not found.
     """
+    if USE_POSTGRES:
+        return _get_ticket_summary_postgres(ticket_id)
+    else:
+        return _get_ticket_summary_sqlite(ticket_id)
+
+def _get_ticket_summary_postgres(ticket_id):
+    """Retrieve ticket summary from PostgreSQL."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT * FROM ticket_summaries WHERE ticket_id = %s', (ticket_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if row:
+            return dict(row)
+        return None
+    except Exception as e:
+        print(f"Error retrieving ticket summary from PostgreSQL: {str(e)}")
+        return None
+
+def _get_ticket_summary_sqlite(ticket_id):
+    """Retrieve ticket summary from SQLite."""
     try:
         with sqlite3.connect(DB_PATH) as conn:
-            conn.row_factory = sqlite3.Row  # Enable column access by name
-            cursor = conn.execute('''
-                SELECT * FROM ticket_summaries WHERE ticket_id = ?
-            ''', (ticket_id,))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute('SELECT * FROM ticket_summaries WHERE ticket_id = ?', (ticket_id,))
             row = cursor.fetchone()
             
             if row:
                 return dict(row)
             return None
     except sqlite3.Error as e:
-        print(f"Error retrieving ticket summary from database: {str(e)}")
+        print(f"Error retrieving ticket summary from SQLite: {str(e)}")
         return None
     except Exception as e:
-        print(f"Unexpected error retrieving ticket summary from database: {str(e)}")
+        print(f"Unexpected error retrieving ticket summary from SQLite: {str(e)}")
         return None
 
 def get_recent_tickets(limit=10):
     """
     Get recent ticket summaries from the database.
+    Supports both PostgreSQL (Railway) and SQLite (local development).
     Returns list of dicts with ticket data.
     """
+    if USE_POSTGRES:
+        return _get_recent_tickets_postgres(limit)
+    else:
+        return _get_recent_tickets_sqlite(limit)
+
+def _get_recent_tickets_postgres(limit):
+    """Get recent tickets from PostgreSQL."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('''
+            SELECT ticket_id, issue_description, root_cause, issue_theme,
+                   test_case_needed, regression_test_needed,
+                   created_at, updated_at
+            FROM ticket_summaries 
+            ORDER BY updated_at DESC 
+            LIMIT %s
+        ''', (limit,))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"Error retrieving recent tickets from PostgreSQL: {str(e)}")
+        return []
+
+def _get_recent_tickets_sqlite(limit):
+    """Get recent tickets from SQLite."""
     try:
         with sqlite3.connect(DB_PATH) as conn:
             conn.row_factory = sqlite3.Row
@@ -261,17 +476,48 @@ def get_recent_tickets(limit=10):
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
     except sqlite3.Error as e:
-        print(f"Error retrieving recent tickets from database: {str(e)}")
+        print(f"Error retrieving recent tickets from SQLite: {str(e)}")
         return []
     except Exception as e:
-        print(f"Unexpected error retrieving recent tickets from database: {str(e)}")
+        print(f"Unexpected error retrieving recent tickets from SQLite: {str(e)}")
         return []
 
 def search_tickets(query):
     """
     Search tickets by ticket_id or issue description.
+    Supports both PostgreSQL (Railway) and SQLite (local development).
     Returns list of dicts with matching ticket data.
     """
+    if USE_POSTGRES:
+        return _search_tickets_postgres(query)
+    else:
+        return _search_tickets_sqlite(query)
+
+def _search_tickets_postgres(query):
+    """Search tickets in PostgreSQL."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        search_pattern = f'%{query}%'
+        cursor.execute('''
+            SELECT ticket_id, issue_description, root_cause, issue_theme,
+                   test_case_needed, regression_test_needed,
+                   created_at, updated_at
+            FROM ticket_summaries 
+            WHERE ticket_id LIKE %s OR issue_description LIKE %s OR root_cause LIKE %s OR issue_theme LIKE %s
+            ORDER BY updated_at DESC 
+            LIMIT 20
+        ''', (search_pattern, search_pattern, search_pattern, search_pattern))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"Error searching tickets in PostgreSQL: {str(e)}")
+        return []
+
+def _search_tickets_sqlite(query):
+    """Search tickets in SQLite."""
     try:
         with sqlite3.connect(DB_PATH) as conn:
             conn.row_factory = sqlite3.Row
@@ -287,10 +533,10 @@ def search_tickets(query):
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
     except sqlite3.Error as e:
-        print(f"Error searching tickets in database: {str(e)}")
+        print(f"Error searching tickets in SQLite: {str(e)}")
         return []
     except Exception as e:
-        print(f"Unexpected error searching tickets in database: {str(e)}")
+        print(f"Unexpected error searching tickets in SQLite: {str(e)}")
         return []
 
 def format_ticket_for_display(row):
@@ -344,19 +590,19 @@ def format_ticket_for_display(row):
 # Initialize database on app startup
 init_db()
 
-def fetch_zendesk_ticket_with_retry(ticket_id, max_retries=3, base_timeout=30):
+def fetch_zendesk_ticket_details(ticket_id, max_retries=3, base_timeout=30):
     """
-    Fetch Zendesk ticket with retry logic and exponential backoff.
+    Fetch Zendesk ticket details (to get requester_id for customer identification).
     Args:
         ticket_id: Zendesk ticket ID
         max_retries: Maximum number of retry attempts
         base_timeout: Base timeout in seconds
     Returns:
-        requests.Response object
+        requests.Response object containing ticket details
     Raises:
         RequestException: If all retries fail
     """
-    url = ZENDESK_URL_TEMPLATE.format(ticket_id)
+    url = ZENDESK_TICKET_URL_TEMPLATE.format(ticket_id)
     headers = zendesk_auth.get_auth_header()
     
     for attempt in range(max_retries):
@@ -369,18 +615,92 @@ def fetch_zendesk_ticket_with_retry(ticket_id, max_retries=3, base_timeout=30):
             return response
         except (Timeout, RequestsConnectionError) as e:
             if attempt < max_retries - 1:
-                # Exponential backoff: wait 1s, 2s, 4s...
                 wait_time = 2 ** attempt
-                print(f"Request failed (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s...")
+                print(f"Ticket details request failed (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s...")
                 time.sleep(wait_time)
             else:
-                # Last attempt failed, raise the exception
-                raise RequestException(f"Failed to fetch ticket after {max_retries} attempts: {str(e)}")
+                raise RequestException(f"Failed to fetch ticket details after {max_retries} attempts: {str(e)}")
         except Exception as e:
-            # For other exceptions, don't retry
-            raise RequestException(f"Unexpected error fetching ticket: {str(e)}")
+            raise RequestException(f"Unexpected error fetching ticket details: {str(e)}")
     
-    raise RequestException(f"Failed to fetch ticket after {max_retries} attempts")
+    raise RequestException(f"Failed to fetch ticket details after {max_retries} attempts")
+
+def fetch_zendesk_ticket_comments(ticket_id, max_retries=3, base_timeout=30):
+    """
+    Fetch Zendesk ticket comments (including internal notes).
+    Args:
+        ticket_id: Zendesk ticket ID
+        max_retries: Maximum number of retry attempts
+        base_timeout: Base timeout in seconds
+    Returns:
+        requests.Response object containing comments
+    Raises:
+        RequestException: If all retries fail
+    """
+    url = ZENDESK_COMMENTS_URL_TEMPLATE.format(ticket_id)
+    headers = zendesk_auth.get_auth_header()
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(
+                url,
+                headers=headers,
+                timeout=base_timeout
+            )
+            return response
+        except (Timeout, RequestsConnectionError) as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt
+                print(f"Comments request failed (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                raise RequestException(f"Failed to fetch ticket comments after {max_retries} attempts: {str(e)}")
+        except Exception as e:
+            raise RequestException(f"Unexpected error fetching ticket comments: {str(e)}")
+    
+    raise RequestException(f"Failed to fetch ticket comments after {max_retries} attempts")
+
+# Keep backward compatibility alias
+def fetch_zendesk_ticket_with_retry(ticket_id, max_retries=3, base_timeout=30):
+    """Backward compatibility alias for fetch_zendesk_ticket_comments."""
+    return fetch_zendesk_ticket_comments(ticket_id, max_retries, base_timeout)
+
+def format_structured_conversation(ticket_data, comments):
+    """
+    Format comments with [CUSTOMER]/[AGENT]/[AGENT - INTERNAL] labels chronologically.
+    This provides richer context for AI analysis by clearly identifying who said what.
+    
+    Args:
+        ticket_data: Ticket details dict containing 'requester_id' (the customer)
+        comments: List of comment objects from Zendesk API
+    Returns:
+        Structured conversation string with labeled speakers and timestamps
+    """
+    requester_id = ticket_data.get('requester_id')
+    formatted_parts = []
+    
+    for comment in comments:
+        author_id = comment.get('author_id')
+        is_public = comment.get('public', True)
+        body = comment.get('body', '').strip()
+        created_at = comment.get('created_at', '')
+        
+        # Skip empty comments
+        if not body:
+            continue
+        
+        # Determine speaker label based on author and visibility
+        if author_id == requester_id:
+            label = "[CUSTOMER]"
+        elif is_public:
+            label = "[AGENT]"
+        else:
+            label = "[AGENT - INTERNAL]"  # Internal notes - often contain engineering discussions
+        
+        # Format with label and timestamp for context
+        formatted_parts.append(f"{label} ({created_at}):\n{body}")
+    
+    return "\n\n---\n\n".join(formatted_parts)
 
 def get_ticket_analysis(conversation, ticket_id=None, timeout=120):
     """
@@ -1548,43 +1868,63 @@ def index():
             session['error'] = "Please enter a ticket ID."
         else:
             try:
-                # Fetch Zendesk ticket with retry logic
-                response = fetch_zendesk_ticket_with_retry(ticket_id, max_retries=3, base_timeout=30)
+                # Step 1: Fetch ticket details to get requester_id (customer)
+                ticket_response = fetch_zendesk_ticket_details(ticket_id, max_retries=3, base_timeout=30)
                 
-                if response.status_code != 200:
-                    session['error'] = f"Zendesk API error: {response.status_code}"
+                if ticket_response.status_code != 200:
+                    session['error'] = f"Zendesk API error (ticket details): {ticket_response.status_code}"
                 else:
-                    data = response.json()
-                    public_comments = [c for c in data.get('comments', []) if c.get('public')]
-                    conversation = "\n---\n".join(f"{c['body']}" for c in public_comments)
-                    if conversation:
-                        # Generate summary with fallback mechanism (Claude -> OpenAI if >50s)
-                        print(f"Starting analysis for ticket {ticket_id}...")
-                        try:
-                            fields = get_ticket_analysis(conversation, ticket_id=ticket_id, timeout=120)
-                            print(f"Analysis complete for ticket {ticket_id}")
-                            
-                            # Validate fields before saving
-                            if fields is None:
-                                print(f"ERROR: get_ticket_analysis returned None for ticket {ticket_id}")
-                                session['error'] = "Analysis failed: No results returned. Please try again."
-                            elif not isinstance(fields, dict):
-                                print(f"ERROR: get_ticket_analysis returned non-dict for ticket {ticket_id}: {type(fields)}")
-                                session['error'] = "Analysis failed: Invalid result format. Please try again."
-                            else:
-                                # Save to database FIRST (before storing in session)
-                                save_ticket_summary(ticket_id, fields)
-                        except Exception as e:
-                            print(f"Error during analysis for ticket {ticket_id}: {str(e)}")
-                            import traceback
-                            traceback.print_exc()
-                            raise
-                        
-                        # Only store ticket_id in session to avoid cookie size limit
-                        # All data will be retrieved from database on GET request
-                        # This prevents "cookie too large" errors
+                    ticket_data = ticket_response.json().get('ticket', {})
+                    requester_id = ticket_data.get('requester_id')
+                    print(f"Ticket {ticket_id} - Requester ID (customer): {requester_id}")
+                    
+                    # Step 2: Fetch all comments (including internal notes for richer context)
+                    comments_response = fetch_zendesk_ticket_comments(ticket_id, max_retries=3, base_timeout=30)
+                    
+                    if comments_response.status_code != 200:
+                        session['error'] = f"Zendesk API error (comments): {comments_response.status_code}"
                     else:
-                        session['error'] = "No public conversation found for this ticket."
+                        comments_data = comments_response.json()
+                        all_comments = comments_data.get('comments', [])
+                        
+                        # Step 3: Format conversation with [CUSTOMER]/[AGENT]/[AGENT - INTERNAL] labels
+                        conversation = format_structured_conversation(ticket_data, all_comments)
+                        
+                        if conversation:
+                            # Log the structured conversation for debugging
+                            print(f"Structured conversation for ticket {ticket_id}:")
+                            print(f"  - Total comments: {len(all_comments)}")
+                            print(f"  - Customer comments: {sum(1 for c in all_comments if c.get('author_id') == requester_id)}")
+                            print(f"  - Agent public comments: {sum(1 for c in all_comments if c.get('author_id') != requester_id and c.get('public'))}")
+                            print(f"  - Agent internal notes: {sum(1 for c in all_comments if c.get('author_id') != requester_id and not c.get('public'))}")
+                            
+                            # Generate summary with enhanced context
+                            print(f"Starting analysis for ticket {ticket_id}...")
+                            try:
+                                fields = get_ticket_analysis(conversation, ticket_id=ticket_id, timeout=120)
+                                print(f"Analysis complete for ticket {ticket_id}")
+                                
+                                # Validate fields before saving
+                                if fields is None:
+                                    print(f"ERROR: get_ticket_analysis returned None for ticket {ticket_id}")
+                                    session['error'] = "Analysis failed: No results returned. Please try again."
+                                elif not isinstance(fields, dict):
+                                    print(f"ERROR: get_ticket_analysis returned non-dict for ticket {ticket_id}: {type(fields)}")
+                                    session['error'] = "Analysis failed: Invalid result format. Please try again."
+                                else:
+                                    # Save to database FIRST (before storing in session)
+                                    save_ticket_summary(ticket_id, fields)
+                            except Exception as e:
+                                print(f"Error during analysis for ticket {ticket_id}: {str(e)}")
+                                import traceback
+                                traceback.print_exc()
+                                raise
+                            
+                            # Only store ticket_id in session to avoid cookie size limit
+                            # All data will be retrieved from database on GET request
+                            # This prevents "cookie too large" errors
+                        else:
+                            session['error'] = "No conversation found for this ticket."
             except Timeout as e:
                 session['error'] = f"Request timed out: The operation took too long. Please try again."
             except TimeoutError as e:

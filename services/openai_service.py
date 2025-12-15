@@ -27,7 +27,19 @@ class EnhancedOpenAIService:
             Dictionary with issue_description, root_cause, test_case_needed
         """
         prompt = f"""
-You are a QA or software development engineer. Analyze this Zendesk ticket conversation and extract key information.
+You are a QA or software development engineer. Analyze this Zendesk support ticket conversation and extract key information.
+
+CONVERSATION FORMAT:
+The conversation is labeled with speaker identifiers and timestamps:
+- [CUSTOMER]: Messages from the customer who reported the issue - focus here for understanding the problem
+- [AGENT]: Public responses from support agents to the customer
+- [AGENT - INTERNAL]: Internal notes (often contain engineering discussions, root cause analysis, and technical details)
+
+IMPORTANT: Pay special attention to [AGENT - INTERNAL] notes as they often contain:
+- Engineering team findings
+- Technical root cause analysis
+- Internal debugging information
+- Resolution details not shared publicly with customer
 
 Ticket conversation:
 ---
@@ -35,8 +47,9 @@ Ticket conversation:
 ---
 
 Extract the following:
-1. Issue Description (technical, as reported/observed)
+1. Issue Description (technical, as reported/observed - focus on [CUSTOMER] messages)
 2. Root Cause (precise, technical details if known/applicable)
+   - Look especially at [AGENT - INTERNAL] notes for technical root cause details from engineering
    - If root cause cannot be identified from the conversation, write "Root cause not identified" or "Unable to determine root cause"
    - Only provide a root cause if you can identify the specific technical reason for the issue
    - Root cause must be CLEAR and SPECIFIC - vague or ambiguous root causes are not acceptable
