@@ -51,80 +51,94 @@ def init_db():
         _init_sqlite_db()
 
 def _init_postgres_db():
-    """Initialize PostgreSQL database for Railway deployment."""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Create table with PostgreSQL syntax
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS ticket_summaries (
-                id SERIAL PRIMARY KEY,
-                ticket_id TEXT NOT NULL UNIQUE,
-                issue_description TEXT,
-                root_cause TEXT,
-                test_case_needed INTEGER,
-                test_case_needed_reason TEXT,
-                regression_test_needed INTEGER,
-                regression_test_needed_reason TEXT,
-                test_case_description TEXT,
-                test_case_steps TEXT,
-                recommended_solution TEXT,
-                search_queries_used TEXT,
-                search_results_summary TEXT,
-                additional_test_scenarios TEXT,
-                test_cases TEXT,
-                num_test_cases INTEGER,
-                documentation_references TEXT,
-                is_documented_limitation INTEGER,
-                is_documented_prerequisite INTEGER,
-                documentation_check_summary TEXT,
-                issue_theme TEXT,
-                root_cause_theme TEXT,
-                ai_provider TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Add columns if they don't exist (for existing databases)
-        columns_to_add = [
-            'recommended_solution TEXT',
-            'search_queries_used TEXT',
-            'search_results_summary TEXT',
-            'additional_test_scenarios TEXT',
-            'test_cases TEXT',
-            'num_test_cases INTEGER',
-            'documentation_references TEXT',
-            'is_documented_limitation INTEGER',
-            'is_documented_prerequisite INTEGER',
-            'documentation_check_summary TEXT',
-            'issue_theme TEXT',
-            'root_cause_theme TEXT',
-            'ai_provider TEXT'
-        ]
-        
-        for col_def in columns_to_add:
-            col_name = col_def.split()[0]
-            try:
-                cursor.execute(f'ALTER TABLE ticket_summaries ADD COLUMN {col_def}')
-            except psycopg2.errors.DuplicateColumn:
-                conn.rollback()  # PostgreSQL requires rollback after error
-            except Exception:
-                conn.rollback()
-        
-        # Create index on ticket_id for faster lookups
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_ticket_id ON ticket_summaries(ticket_id)
-        ''')
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
-        print("PostgreSQL database initialized successfully")
-    except Exception as e:
-        print(f"Error initializing PostgreSQL database: {str(e)}")
-        raise
+    """Initialize PostgreSQL database for Railway deployment with retry logic."""
+    max_retries = 3
+    retry_delay = 2
+    
+    for attempt in range(max_retries):
+        try:
+            print(f"Attempting PostgreSQL connection (attempt {attempt + 1}/{max_retries})...")
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            print("PostgreSQL connection successful!")
+            
+            # Create table with PostgreSQL syntax
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS ticket_summaries (
+                    id SERIAL PRIMARY KEY,
+                    ticket_id TEXT NOT NULL UNIQUE,
+                    issue_description TEXT,
+                    root_cause TEXT,
+                    test_case_needed INTEGER,
+                    test_case_needed_reason TEXT,
+                    regression_test_needed INTEGER,
+                    regression_test_needed_reason TEXT,
+                    test_case_description TEXT,
+                    test_case_steps TEXT,
+                    recommended_solution TEXT,
+                    search_queries_used TEXT,
+                    search_results_summary TEXT,
+                    additional_test_scenarios TEXT,
+                    test_cases TEXT,
+                    num_test_cases INTEGER,
+                    documentation_references TEXT,
+                    is_documented_limitation INTEGER,
+                    is_documented_prerequisite INTEGER,
+                    documentation_check_summary TEXT,
+                    issue_theme TEXT,
+                    root_cause_theme TEXT,
+                    ai_provider TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Add columns if they don't exist (for existing databases)
+            columns_to_add = [
+                'recommended_solution TEXT',
+                'search_queries_used TEXT',
+                'search_results_summary TEXT',
+                'additional_test_scenarios TEXT',
+                'test_cases TEXT',
+                'num_test_cases INTEGER',
+                'documentation_references TEXT',
+                'is_documented_limitation INTEGER',
+                'is_documented_prerequisite INTEGER',
+                'documentation_check_summary TEXT',
+                'issue_theme TEXT',
+                'root_cause_theme TEXT',
+                'ai_provider TEXT'
+            ]
+            
+            for col_def in columns_to_add:
+                col_name = col_def.split()[0]
+                try:
+                    cursor.execute(f'ALTER TABLE ticket_summaries ADD COLUMN {col_def}')
+                except psycopg2.errors.DuplicateColumn:
+                    conn.rollback()  # PostgreSQL requires rollback after error
+                except Exception:
+                    conn.rollback()
+            
+            # Create index on ticket_id for faster lookups
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_ticket_id ON ticket_summaries(ticket_id)
+            ''')
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            print("PostgreSQL database initialized successfully")
+            return  # Success, exit the retry loop
+            
+        except Exception as e:
+            print(f"Error initializing PostgreSQL database (attempt {attempt + 1}): {str(e)}")
+            if attempt < max_retries - 1:
+                print(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                print("All PostgreSQL connection attempts failed")
+                raise
 
 def _init_sqlite_db():
     """Initialize SQLite database for local development."""
