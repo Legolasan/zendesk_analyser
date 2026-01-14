@@ -760,7 +760,7 @@ def _get_ticket_priority_sqlite(ticket_id):
         print(f"Error retrieving ticket priority from SQLite: {str(e)}")
         return None
 
-def get_recent_priorities(limit=10):
+def get_recent_priorities(limit=3):
     """
     Get recent ticket priorities from the database.
     Returns list of dicts with priority data.
@@ -2611,7 +2611,7 @@ def priority_index():
     
     # Get recent priorities for display
     try:
-        recent_priorities = get_recent_priorities(limit=5)
+        recent_priorities = get_recent_priorities(limit=3)
     except Exception as e:
         print(f"Error retrieving recent priorities: {str(e)}")
         recent_priorities = []
