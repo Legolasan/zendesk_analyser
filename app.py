@@ -903,6 +903,7 @@ def fetch_zendesk_ticket_details(ticket_id, max_retries=3, base_timeout=30):
 def fetch_zendesk_ticket_comments(ticket_id, max_retries=3, base_timeout=30):
     """
     Fetch Zendesk ticket comments (including internal notes).
+    Uses the ticket endpoint with include=comments to get ALL comments including internal notes.
     Args:
         ticket_id: Zendesk ticket ID
         max_retries: Maximum number of retry attempts
@@ -912,7 +913,9 @@ def fetch_zendesk_ticket_comments(ticket_id, max_retries=3, base_timeout=30):
     Raises:
         RequestException: If all retries fail
     """
-    url = ZENDESK_COMMENTS_URL_TEMPLATE.format(ticket_id)
+    # Use ticket endpoint with include=comments to get ALL comments (public + internal)
+    # This is more reliable than the comments endpoint alone
+    url = f"{ZENDESK_TICKET_URL_TEMPLATE.format(ticket_id)}?include=comments"
     headers = zendesk_auth.get_auth_header()
     
     for attempt in range(max_retries):
@@ -922,6 +925,28 @@ def fetch_zendesk_ticket_comments(ticket_id, max_retries=3, base_timeout=30):
                 headers=headers,
                 timeout=base_timeout
             )
+            
+            # If successful, extract comments from the response
+            if response.status_code == 200:
+                data = response.json()
+                # The ticket endpoint returns comments in a different structure
+                # Check if comments are in the response
+                if 'comments' in data:
+                    # Comments are already in the response
+                    return response
+                elif 'ticket' in data and 'comments' in data:
+                    # Comments might be in a nested structure
+                    return response
+                else:
+                    # Fallback: try the comments endpoint directly
+                    comments_url = ZENDESK_COMMENTS_URL_TEMPLATE.format(ticket_id)
+                    comments_response = requests.get(
+                        comments_url,
+                        headers=headers,
+                        timeout=base_timeout
+                    )
+                    return comments_response
+            
             return response
         except (Timeout, RequestsConnectionError) as e:
             if attempt < max_retries - 1:
@@ -2462,7 +2487,20 @@ def priority_index():
                         session['priority_error'] = f"Zendesk API error (comments): {comments_response.status_code}"
                     else:
                         comments_data = comments_response.json()
-                        all_comments = comments_data.get('comments', [])
+                        
+                        # Handle different response structures from Zendesk API
+                        # The ticket endpoint with include=comments returns: {ticket: {...}, comments: [...]}
+                        # The comments endpoint returns: {comments: [...]}
+                        if 'comments' in comments_data:
+                            all_comments = comments_data.get('comments', [])
+                        elif 'ticket' in comments_data and 'comments' in comments_data:
+                            all_comments = comments_data.get('comments', [])
+                        else:
+                            # Try to find comments in nested structure
+                            all_comments = comments_data.get('comments', [])
+                            if not all_comments and 'ticket' in comments_data:
+                                ticket_obj = comments_data.get('ticket', {})
+                                all_comments = ticket_obj.get('comments', [])
                         
                         # Debug: Log comment types for ticket 64258
                         if ticket_id == '64258' or ticket_id == 64258:
@@ -2471,6 +2509,7 @@ def priority_index():
                             print(f"DEBUG Ticket {ticket_id}: {len(all_comments)} total comments ({public_count} public, {internal_count} internal)")
                             if internal_count == 0:
                                 print(f"WARNING: No internal comments found for ticket {ticket_id}!")
+                                print(f"Response structure keys: {list(comments_data.keys())}")
                                 print(f"Sample comment keys: {list(all_comments[0].keys()) if all_comments else 'No comments'}")
                         
                         # Step 3: Format conversation
