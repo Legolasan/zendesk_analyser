@@ -151,9 +151,17 @@ def _init_postgres_db():
             ''')
             
             conn.commit()
+            
+            # Verify tables exist and count existing records (for safety check)
+            cursor.execute("SELECT COUNT(*) FROM ticket_summaries")
+            summaries_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM ticket_priorities")
+            priorities_count = cursor.fetchone()[0]
+            print(f"PostgreSQL database initialized successfully")
+            print(f"  Existing records: {summaries_count} ticket summaries, {priorities_count} priorities")
+            
             cursor.close()
             conn.close()
-            print("PostgreSQL database initialized successfully")
             return  # Success, exit the retry loop
             
         except Exception as e:
@@ -275,6 +283,15 @@ def _init_sqlite_db():
             
             # Enable WAL mode for better concurrent performance
             conn.execute('PRAGMA journal_mode=WAL')
+            
+            # Verify tables exist and count existing records (for safety check)
+            cursor = conn.execute("SELECT COUNT(*) FROM ticket_summaries")
+            summaries_count = cursor.fetchone()[0]
+            cursor = conn.execute("SELECT COUNT(*) FROM ticket_priorities")
+            priorities_count = cursor.fetchone()[0]
+            print(f"SQLite database initialized successfully")
+            print(f"  Existing records: {summaries_count} ticket summaries, {priorities_count} priorities")
+            
             conn.commit()
     except sqlite3.Error as e:
         print(f"Error initializing SQLite database: {str(e)}")
@@ -839,7 +856,14 @@ def format_ticket_for_display(row):
     }
 
 # Initialize database on app startup
-init_db()
+# This is safe - only creates tables if they don't exist, never drops data
+print("Initializing database...")
+try:
+    init_db()
+    print("Database initialization complete - all existing data is preserved")
+except Exception as e:
+    print(f"WARNING: Database initialization failed: {str(e)}")
+    print("App will continue but database operations may fail")
 
 def fetch_zendesk_ticket_details(ticket_id, max_retries=3, base_timeout=30):
     """
