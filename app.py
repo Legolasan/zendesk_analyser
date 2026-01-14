@@ -8,6 +8,7 @@ from datetime import datetime
 from requests.exceptions import Timeout, RequestException, ConnectionError as RequestsConnectionError
 from zendesk_auth import zendesk_auth
 from services.openai_service import EnhancedOpenAIService
+from services.priority_service import PriorityAnalyzerService
 import errno
 
 # PostgreSQL support for Railway deployment
@@ -40,6 +41,7 @@ def get_db_connection():
         return sqlite3.connect(DB_PATH)
 
 openai_service = EnhancedOpenAIService(api_key=OPENAI_API_KEY, model="gpt-4o") if OPENAI_API_KEY else None
+priority_service = PriorityAnalyzerService(api_key=OPENAI_API_KEY, model="gpt-4o") if OPENAI_API_KEY else None
 
 def init_db():
     """Initialize the database and create tables if they don't exist.
@@ -122,6 +124,30 @@ def _init_postgres_db():
             # Create index on ticket_id for faster lookups
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_ticket_id ON ticket_summaries(ticket_id)
+            ''')
+            
+            # Create ticket_priorities table for Q1 planning
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS ticket_priorities (
+                    id SERIAL PRIMARY KEY,
+                    ticket_id TEXT NOT NULL UNIQUE,
+                    clear_description TEXT,
+                    ai_theme TEXT,
+                    product_area TEXT,
+                    is_blocker INTEGER,
+                    is_churn_risk INTEGER,
+                    is_escalation INTEGER,
+                    is_revenue_impact INTEGER,
+                    signal_details TEXT,
+                    priority_score TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create index on ticket_priorities
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_priority_ticket_id ON ticket_priorities(ticket_id)
             ''')
             
             conn.commit()
@@ -221,6 +247,30 @@ def _init_sqlite_db():
             # Create index on ticket_id for faster lookups
             conn.execute('''
                 CREATE INDEX IF NOT EXISTS idx_ticket_id ON ticket_summaries(ticket_id)
+            ''')
+            
+            # Create ticket_priorities table for Q1 planning
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS ticket_priorities (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ticket_id TEXT NOT NULL UNIQUE,
+                    clear_description TEXT,
+                    ai_theme TEXT,
+                    product_area TEXT,
+                    is_blocker INTEGER,
+                    is_churn_risk INTEGER,
+                    is_escalation INTEGER,
+                    is_revenue_impact INTEGER,
+                    signal_details TEXT,
+                    priority_score TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create index on ticket_priorities
+            conn.execute('''
+                CREATE INDEX IF NOT EXISTS idx_priority_ticket_id ON ticket_priorities(ticket_id)
             ''')
             
             # Enable WAL mode for better concurrent performance
@@ -552,6 +602,193 @@ def _search_tickets_sqlite(query):
     except Exception as e:
         print(f"Unexpected error searching tickets in SQLite: {str(e)}")
         return []
+
+# ============================================================
+# TICKET PRIORITIES CRUD FUNCTIONS (Q1 Planning Module)
+# ============================================================
+
+def save_ticket_priority(ticket_id, fields):
+    """
+    Save ticket priority analysis to database.
+    Supports both PostgreSQL (Railway) and SQLite (local development).
+    """
+    if fields is None or not isinstance(fields, dict):
+        print(f"ERROR: Invalid fields for ticket priority {ticket_id}")
+        return
+    
+    values = (
+        ticket_id,
+        fields.get('clear_description', ''),
+        fields.get('ai_theme', ''),
+        fields.get('product_area', 'Other'),
+        1 if fields.get('is_blocker') else 0,
+        1 if fields.get('is_churn_risk') else 0,
+        1 if fields.get('is_escalation') else 0,
+        1 if fields.get('is_revenue_impact') else 0,
+        fields.get('signal_details', ''),
+        fields.get('priority_score', 'Medium'),
+        datetime.now().isoformat()
+    )
+    
+    if USE_POSTGRES:
+        _save_ticket_priority_postgres(values)
+    else:
+        _save_ticket_priority_sqlite(values)
+
+def _save_ticket_priority_postgres(values):
+    """Save ticket priority to PostgreSQL database."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO ticket_priorities (
+                ticket_id, clear_description, ai_theme, product_area,
+                is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
+                signal_details, priority_score, updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (ticket_id) DO UPDATE SET
+                clear_description = EXCLUDED.clear_description,
+                ai_theme = EXCLUDED.ai_theme,
+                product_area = EXCLUDED.product_area,
+                is_blocker = EXCLUDED.is_blocker,
+                is_churn_risk = EXCLUDED.is_churn_risk,
+                is_escalation = EXCLUDED.is_escalation,
+                is_revenue_impact = EXCLUDED.is_revenue_impact,
+                signal_details = EXCLUDED.signal_details,
+                priority_score = EXCLUDED.priority_score,
+                updated_at = EXCLUDED.updated_at
+        ''', values)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error saving ticket priority to PostgreSQL: {str(e)}")
+
+def _save_ticket_priority_sqlite(values):
+    """Save ticket priority to SQLite database."""
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute('''
+                INSERT OR REPLACE INTO ticket_priorities (
+                    ticket_id, clear_description, ai_theme, product_area,
+                    is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
+                    signal_details, priority_score, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', values)
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error saving ticket priority to SQLite: {str(e)}")
+
+def get_ticket_priority(ticket_id):
+    """
+    Retrieve a ticket priority from the database by ticket_id.
+    Returns dict with priority data or None if not found.
+    """
+    if USE_POSTGRES:
+        return _get_ticket_priority_postgres(ticket_id)
+    else:
+        return _get_ticket_priority_sqlite(ticket_id)
+
+def _get_ticket_priority_postgres(ticket_id):
+    """Retrieve ticket priority from PostgreSQL."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT * FROM ticket_priorities WHERE ticket_id = %s', (ticket_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if row:
+            return dict(row)
+        return None
+    except Exception as e:
+        print(f"Error retrieving ticket priority from PostgreSQL: {str(e)}")
+        return None
+
+def _get_ticket_priority_sqlite(ticket_id):
+    """Retrieve ticket priority from SQLite."""
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute('SELECT * FROM ticket_priorities WHERE ticket_id = ?', (ticket_id,))
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+            return None
+    except sqlite3.Error as e:
+        print(f"Error retrieving ticket priority from SQLite: {str(e)}")
+        return None
+
+def get_recent_priorities(limit=10):
+    """
+    Get recent ticket priorities from the database.
+    Returns list of dicts with priority data.
+    """
+    if USE_POSTGRES:
+        return _get_recent_priorities_postgres(limit)
+    else:
+        return _get_recent_priorities_sqlite(limit)
+
+def _get_recent_priorities_postgres(limit):
+    """Get recent priorities from PostgreSQL."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('''
+            SELECT ticket_id, clear_description, ai_theme, product_area,
+                   is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
+                   priority_score, created_at, updated_at
+            FROM ticket_priorities 
+            ORDER BY updated_at DESC 
+            LIMIT %s
+        ''', (limit,))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"Error retrieving recent priorities from PostgreSQL: {str(e)}")
+        return []
+
+def _get_recent_priorities_sqlite(limit):
+    """Get recent priorities from SQLite."""
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute('''
+                SELECT ticket_id, clear_description, ai_theme, product_area,
+                       is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
+                       priority_score, created_at, updated_at
+                FROM ticket_priorities 
+                ORDER BY updated_at DESC 
+                LIMIT ?
+            ''', (limit,))
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+    except sqlite3.Error as e:
+        print(f"Error retrieving recent priorities from SQLite: {str(e)}")
+        return []
+
+def format_priority_for_display(row):
+    """Convert database row to display format for priorities."""
+    return {
+        'ticket_id': row['ticket_id'],
+        'clear_description': row.get('clear_description', ''),
+        'ai_theme': row.get('ai_theme', ''),
+        'product_area': row.get('product_area', 'Other'),
+        'is_blocker': bool(row.get('is_blocker', 0)),
+        'is_churn_risk': bool(row.get('is_churn_risk', 0)),
+        'is_escalation': bool(row.get('is_escalation', 0)),
+        'is_revenue_impact': bool(row.get('is_revenue_impact', 0)),
+        'signal_details': row.get('signal_details', ''),
+        'priority_score': row.get('priority_score', 'Medium'),
+        'created_at': row.get('created_at', ''),
+        'updated_at': row.get('updated_at', '')
+    }
+
+# ============================================================
+# END TICKET PRIORITIES CRUD FUNCTIONS
+# ============================================================
 
 def format_ticket_for_display(row):
     """Convert database row to display format."""
@@ -2145,6 +2382,119 @@ def get_scraper_status_api():
             'total_vectors': 0,
             'total_chunks': 0
         }), 500
+
+# ============================================================
+# PRIORITY ANALYZER ROUTES (Q1 Planning Module)
+# ============================================================
+
+@app.route('/priority', methods=['GET', 'POST'])
+def priority_index():
+    """Priority Analyzer page for Q1 planning."""
+    if request.method == 'POST':
+        ticket_id = request.form.get('ticket_id')
+        
+        # Store ticket_id in session for the redirect
+        session['priority_ticket_id'] = ticket_id or ''
+        session.pop('priority_error', None)
+        
+        if not ticket_id:
+            session['priority_error'] = "Please enter a ticket ID."
+        else:
+            try:
+                # Step 1: Fetch ticket details
+                ticket_response = fetch_zendesk_ticket_details(ticket_id, max_retries=3, base_timeout=30)
+                
+                if ticket_response.status_code != 200:
+                    session['priority_error'] = f"Zendesk API error (ticket details): {ticket_response.status_code}"
+                else:
+                    ticket_data = ticket_response.json().get('ticket', {})
+                    requester_id = ticket_data.get('requester_id')
+                    
+                    # Step 2: Fetch all comments
+                    comments_response = fetch_zendesk_ticket_comments(ticket_id, max_retries=3, base_timeout=30)
+                    
+                    if comments_response.status_code != 200:
+                        session['priority_error'] = f"Zendesk API error (comments): {comments_response.status_code}"
+                    else:
+                        comments_data = comments_response.json()
+                        all_comments = comments_data.get('comments', [])
+                        
+                        # Step 3: Format conversation
+                        conversation = format_structured_conversation(ticket_data, all_comments)
+                        
+                        if conversation:
+                            # Step 4: Analyze priority with AI
+                            print(f"Starting priority analysis for ticket {ticket_id}...")
+                            
+                            if not priority_service:
+                                session['priority_error'] = "OpenAI API key is not configured."
+                            else:
+                                try:
+                                    fields = priority_service.analyze_ticket_priority(conversation, timeout=60)
+                                    print(f"Priority analysis complete for ticket {ticket_id}")
+                                    
+                                    # Save to database
+                                    save_ticket_priority(ticket_id, fields)
+                                except Exception as e:
+                                    print(f"Error during priority analysis for ticket {ticket_id}: {str(e)}")
+                                    session['priority_error'] = f"Analysis error: {str(e)[:200]}"
+                        else:
+                            session['priority_error'] = "No conversation found for this ticket."
+            except Timeout as e:
+                session['priority_error'] = f"Request timed out. Please try again."
+            except RequestException as e:
+                session['priority_error'] = f"Network error: {str(e)[:200]}"
+            except Exception as e:
+                session['priority_error'] = f"Error processing ticket: {str(e)[:200]}"
+        
+        # Redirect to GET
+        session.modified = True
+        return redirect(url_for('priority_index'))
+    
+    # GET request - retrieve data from session and database
+    ticket_id = session.pop('priority_ticket_id', '')
+    error = session.pop('priority_error', '')
+    
+    # Retrieve data from database if ticket_id is present
+    priority_data = {}
+    if ticket_id:
+        priority_row = get_ticket_priority(ticket_id)
+        if priority_row:
+            priority_data = format_priority_for_display(priority_row)
+    
+    # Get recent priorities for display
+    recent_priorities = get_recent_priorities(limit=5)
+    
+    return render_template('priority.html', 
+                           ticket_id=ticket_id, 
+                           error=error, 
+                           recent_priorities=recent_priorities,
+                           **priority_data)
+
+@app.route('/api/priority/<ticket_id>')
+def get_priority_api(ticket_id):
+    """API endpoint to get a ticket priority by ID."""
+    try:
+        priority = get_ticket_priority(ticket_id)
+        if priority:
+            return jsonify(format_priority_for_display(priority))
+        return jsonify({'error': 'Priority analysis not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/priorities/recent')
+def get_recent_priorities_api():
+    """API endpoint to get recent priorities."""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        priorities = get_recent_priorities(limit=limit)
+        return jsonify(priorities)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ============================================================
+# END PRIORITY ANALYZER ROUTES
+# ============================================================
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))

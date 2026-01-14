@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Priority Analyzer - Q1 Planning</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        --info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        --critical-gradient: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+        --high-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        --medium-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --low-gradient: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        --dark-bg: #1a1d29;
+        --card-bg: #ffffff;
+        --text-primary: #2d3748;
+        --text-secondary: #718096;
+        --border-color: #e2e8f0;
+        --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+        --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+        --shadow-xl: 0 20px 40px rgba(0,0,0,0.15);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body { 
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 50%, #667eea 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .main-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+      }
+
+      .header-section {
+        text-align: center;
+        margin-bottom: 2.5rem;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: var(--shadow-xl);
+        backdrop-filter: blur(10px);
+      }
+
+      .header-section h1 {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .header-section p {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+      }
+
+      .nav-links {
+        margin-top: 1rem;
+      }
+
+      .nav-links a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        margin: 0 1rem;
+        transition: color 0.3s ease;
+      }
+
+      .nav-links a:hover {
+        color: #764ba2;
+      }
+
+      .section-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      @media (min-width: 992px) {
+        .section-container {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .card-modern {
+        background: var(--card-bg);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        border: none;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .card-modern:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-xl);
+      }
+
+      .card-header-modern {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        padding: 1.5rem;
+        border: none;
+        font-weight: 600;
+        font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .card-header-modern i {
+        font-size: 1.5rem;
+      }
+
+      .card-body-modern {
+        padding: 2rem;
+      }
+
+      .form-section {
+        background: var(--card-bg);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .form-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        font-size: 1.1rem;
+      }
+
+      .input-group-modern {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .form-control-modern {
+        flex: 1;
+        padding: 1rem 1.25rem;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .form-control-modern:focus {
+        border-color: #11998e;
+        box-shadow: 0 0 0 3px rgba(17, 153, 142, 0.1);
+        outline: none;
+      }
+
+      .btn-primary-modern {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn-primary-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        filter: brightness(1.05);
+      }
+
+      .btn-outline-modern {
+        border: 2px solid #11998e;
+        color: #11998e;
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
+        background: transparent;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .btn-outline-modern:hover {
+        background: #11998e;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .list-group-item-modern {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .list-group-item-modern:hover {
+        border-color: #11998e;
+        box-shadow: var(--shadow-md);
+        transform: translateX(5px);
+      }
+
+      .badge-modern {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.85rem;
+      }
+
+      .badge-critical {
+        background: var(--critical-gradient);
+        color: white;
+      }
+
+      .badge-high {
+        background: var(--high-gradient);
+        color: white;
+      }
+
+      .badge-medium {
+        background: var(--medium-gradient);
+        color: white;
+      }
+
+      .badge-low {
+        background: var(--low-gradient);
+        color: #333;
+      }
+
+      .signal-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+      }
+
+      .signal-active {
+        background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+        color: white;
+      }
+
+      .signal-inactive {
+        background: #e2e8f0;
+        color: #718096;
+      }
+
+      .product-area-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.9rem;
+      }
+
+      .theme-badge {
+        background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.9rem;
+      }
+
+      .results-section {
+        background: var(--card-bg);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        padding: 2.5rem;
+        margin-top: 2rem;
+      }
+
+      .output-heading {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        margin-top: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .output-heading:first-child {
+        margin-top: 0;
+      }
+
+      .description-box {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-left: 4px solid #11998e;
+        border-radius: 12px;
+        padding: 1.5rem;
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: var(--text-primary);
+      }
+
+      .priority-signals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .signal-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: var(--shadow-sm);
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+      }
+
+      .signal-card.active {
+        border-color: #f5576c;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe0e6 100%);
+      }
+
+      .signal-card .signal-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .signal-card.active .signal-icon {
+        color: #f5576c;
+      }
+
+      .signal-card:not(.active) .signal-icon {
+        color: #cbd5e0;
+      }
+
+      .signal-card .signal-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+      }
+
+      .alert-modern {
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        border: none;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 1rem;
+      }
+
+      #loader {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #loader.show {
+        display: flex;
+      }
+
+      .loader-content {
+        text-align: center;
+        color: white;
+      }
+
+      .spinner-border {
+        width: 4rem;
+        height: 4rem;
+        border-width: 0.3rem;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-secondary);
+      }
+
+      .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+      }
+
+      footer {
+        text-align: center;
+        padding: 2rem;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+      }
+
+      .ticket-id-display {
+        font-weight: 700;
+        color: #11998e;
+        font-size: 1.1rem;
+      }
+
+      .date-badge {
+        background: rgba(17, 153, 142, 0.1);
+        color: #11998e;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-out;
+      }
+    </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <!-- Header -->
+    <div class="header-section fade-in">
+      <h1><i class="fas fa-chart-line"></i> Priority Analyzer</h1>
+      <p>Analyze Zendesk tickets for Q1 Planning prioritization</p>
+      <div class="nav-links">
+        <a href="/"><i class="fas fa-clipboard-check"></i> Test Case Generator</a>
+        <a href="/priority"><i class="fas fa-chart-line"></i> Priority Analyzer</a>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="section-container">
+      <!-- Left Section: Query Form -->
+      <div class="form-section fade-in">
+        <h3 class="mb-4" style="color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-search" style="color: #11998e;"></i> Analyze Ticket Priority
+        </h3>
+        <form method="post" id="priority-form">
+          <div class="mb-4">
+            <label for="ticket_id" class="form-label">
+              <i class="fas fa-hashtag"></i> Zendesk Ticket ID
+            </label>
+            <div class="input-group-modern">
+              <input type="text" class="form-control form-control-modern" id="ticket_id" name="ticket_id" 
+                     placeholder="Enter Ticket ID (e.g., 12345)" value="{{ ticket_id|default('') }}">
+              <button type="submit" class="btn btn-primary-modern">
+                <i class="fas fa-chart-bar"></i> Analyze
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Right Section: Recent Priorities -->
+      <div class="card-modern fade-in">
+        <div class="card-header-modern">
+          <i class="fas fa-history"></i>
+          <span>Recent Priority Analyses</span>
+        </div>
+        <div class="card-body-modern">
+          {% if recent_priorities %}
+            <div class="list-group" id="recent_priorities_list">
+              {% for p in recent_priorities %}
+                <div class="list-group-item-modern">
+                  <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+                    <span class="ticket-id-display">#{{ p.ticket_id }}</span>
+                    <span class="badge-modern badge-{{ p.priority_score|lower if p.priority_score else 'medium' }}">
+                      {{ p.priority_score or 'Medium' }}
+                    </span>
+                  </div>
+                  <p class="mb-2" style="color: var(--text-secondary); line-height: 1.6; font-size: 0.9rem;">
+                    {{ p.clear_description[:100] if p.clear_description else 'No description' }}...
+                  </p>
+                  <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                    <span class="product-area-badge" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                      {{ p.product_area or 'Other' }}
+                    </span>
+                    {% if p.is_blocker %}
+                      <span class="signal-badge signal-active"><i class="fas fa-ban"></i> Blocker</span>
+                    {% endif %}
+                    {% if p.is_churn_risk %}
+                      <span class="signal-badge signal-active"><i class="fas fa-user-minus"></i> Churn</span>
+                    {% endif %}
+                    {% if p.is_escalation %}
+                      <span class="signal-badge signal-active"><i class="fas fa-arrow-up"></i> Escalated</span>
+                    {% endif %}
+                    {% if p.is_revenue_impact %}
+                      <span class="signal-badge signal-active"><i class="fas fa-dollar-sign"></i> Revenue</span>
+                    {% endif %}
+                  </div>
+                  <button class="btn btn-outline-modern btn-sm" onclick="loadPriority('{{ p.ticket_id }}')">
+                    <i class="fas fa-eye"></i> Load
+                  </button>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <p>No priority analyses yet. Analyze a ticket to get started.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    {% if error %}
+      <div class="alert alert-modern fade-in" style="background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); color: white; border-radius: 15px; margin-bottom: 2rem;">
+        <i class="fas fa-exclamation-circle"></i> {{ error }}
+      </div>
+    {% endif %}
+
+    <!-- Results Section -->
+    {% if clear_description %}
+    <div class="results-section fade-in" id="results-section">
+      <h2 class="mb-4" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        <i class="fas fa-file-alt"></i> Priority Analysis Results
+      </h2>
+      
+      <!-- Priority Score Banner -->
+      <div class="mb-4">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <span class="badge-modern badge-{{ priority_score|lower if priority_score else 'medium' }}" style="font-size: 1.2rem; padding: 0.75rem 1.5rem;">
+            <i class="fas fa-flag"></i> {{ priority_score or 'Medium' }} Priority
+          </span>
+          <span class="product-area-badge">
+            <i class="fas fa-folder"></i> {{ product_area or 'Other' }}
+          </span>
+          {% if ai_theme %}
+          <span class="theme-badge">
+            <i class="fas fa-tag"></i> {{ ai_theme }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Clear Description -->
+      <h4 class="output-heading">
+        <i class="fas fa-align-left"></i> Clear Description
+      </h4>
+      <div class="description-box">
+        {{ clear_description }}
+      </div>
+
+      <!-- Priority Signals -->
+      <h4 class="output-heading">
+        <i class="fas fa-exclamation-triangle"></i> Priority Signals
+      </h4>
+      <div class="priority-signals-grid">
+        <div class="signal-card {{ 'active' if is_blocker else '' }}">
+          <div class="signal-icon"><i class="fas fa-ban"></i></div>
+          <div class="signal-label">Blocker</div>
+          <small class="text-muted">{{ 'Detected' if is_blocker else 'Not detected' }}</small>
+        </div>
+        <div class="signal-card {{ 'active' if is_churn_risk else '' }}">
+          <div class="signal-icon"><i class="fas fa-user-minus"></i></div>
+          <div class="signal-label">Churn Risk</div>
+          <small class="text-muted">{{ 'Detected' if is_churn_risk else 'Not detected' }}</small>
+        </div>
+        <div class="signal-card {{ 'active' if is_escalation else '' }}">
+          <div class="signal-icon"><i class="fas fa-arrow-up"></i></div>
+          <div class="signal-label">Escalation</div>
+          <small class="text-muted">{{ 'Detected' if is_escalation else 'Not detected' }}</small>
+        </div>
+        <div class="signal-card {{ 'active' if is_revenue_impact else '' }}">
+          <div class="signal-icon"><i class="fas fa-dollar-sign"></i></div>
+          <div class="signal-label">Revenue Impact</div>
+          <small class="text-muted">{{ 'Detected' if is_revenue_impact else 'Not detected' }}</small>
+        </div>
+      </div>
+
+      {% if signal_details %}
+      <h4 class="output-heading">
+        <i class="fas fa-info-circle"></i> Signal Details
+      </h4>
+      <div class="description-box" style="font-size: 0.95rem;">
+        {{ signal_details }}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <footer>
+      <p>&copy; 2025 Zendesk Ticket Analyzer | Priority Module for Q1 Planning</p>
+    </footer>
+  </div>
+  
+  <!-- Loader overlay -->
+  <div id="loader">
+    <div class="loader-content">
+      <div class="spinner-border text-white" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-white mt-3">Analyzing ticket priority...</p>
+    </div>
+  </div>
+
+  <script>
+    // Show loader when form is submitted
+    document.getElementById('priority-form').addEventListener('submit', function() {
+      document.getElementById('loader').classList.add('show');
+    });
+    
+    // Hide loader when page loads
+    window.addEventListener('load', function() {
+      document.getElementById('loader').classList.remove('show');
+    });
+
+    // Load priority from database
+    function loadPriority(ticketId) {
+      const loader = document.getElementById('loader');
+      loader.classList.add('show');
+      
+      fetch(`/api/priority/${ticketId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Priority analysis not found');
+          }
+          return response.json();
+        })
+        .then(data => {
+          loader.classList.remove('show');
+          
+          // Fill the form with ticket ID
+          document.getElementById('ticket_id').value = data.ticket_id;
+          
+          // Display the results
+          displayPriorityResults(data);
+        })
+        .catch(error => {
+          loader.classList.remove('show');
+          alert('Error loading priority: ' + error.message);
+        });
+    }
+
+    // Display priority results dynamically
+    function displayPriorityResults(data) {
+      let resultsSection = document.getElementById('results-section');
+      
+      if (!resultsSection) {
+        // Create results section if it doesn't exist
+        const container = document.querySelector('.section-container');
+        const sectionHtml = `<div class="results-section fade-in" id="results-section"></div>`;
+        container.insertAdjacentHTML('afterend', sectionHtml);
+        resultsSection = document.getElementById('results-section');
+      }
+      
+      const priorityClass = (data.priority_score || 'medium').toLowerCase();
+      
+      let signalsHtml = '';
+      const signals = [
+        { key: 'is_blocker', label: 'Blocker', icon: 'fa-ban' },
+        { key: 'is_churn_risk', label: 'Churn Risk', icon: 'fa-user-minus' },
+        { key: 'is_escalation', label: 'Escalation', icon: 'fa-arrow-up' },
+        { key: 'is_revenue_impact', label: 'Revenue Impact', icon: 'fa-dollar-sign' }
+      ];
+      
+      signals.forEach(signal => {
+        const isActive = data[signal.key];
+        signalsHtml += `
+          <div class="signal-card ${isActive ? 'active' : ''}">
+            <div class="signal-icon"><i class="fas ${signal.icon}"></i></div>
+            <div class="signal-label">${signal.label}</div>
+            <small class="text-muted">${isActive ? 'Detected' : 'Not detected'}</small>
+          </div>
+        `;
+      });
+      
+      let html = `
+        <h2 class="mb-4" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+          <i class="fas fa-file-alt"></i> Priority Analysis Results
+        </h2>
+        
+        <div class="mb-4">
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <span class="badge-modern badge-${priorityClass}" style="font-size: 1.2rem; padding: 0.75rem 1.5rem;">
+              <i class="fas fa-flag"></i> ${data.priority_score || 'Medium'} Priority
+            </span>
+            <span class="product-area-badge">
+              <i class="fas fa-folder"></i> ${data.product_area || 'Other'}
+            </span>
+            ${data.ai_theme ? `<span class="theme-badge"><i class="fas fa-tag"></i> ${escapeHtml(data.ai_theme)}</span>` : ''}
+          </div>
+        </div>
+
+        <h4 class="output-heading">
+          <i class="fas fa-align-left"></i> Clear Description
+        </h4>
+        <div class="description-box">
+          ${escapeHtml(data.clear_description || 'No description available')}
+        </div>
+
+        <h4 class="output-heading">
+          <i class="fas fa-exclamation-triangle"></i> Priority Signals
+        </h4>
+        <div class="priority-signals-grid">
+          ${signalsHtml}
+        </div>
+      `;
+      
+      if (data.signal_details) {
+        html += `
+          <h4 class="output-heading">
+            <i class="fas fa-info-circle"></i> Signal Details
+          </h4>
+          <div class="description-box" style="font-size: 0.95rem;">
+            ${escapeHtml(data.signal_details)}
+          </div>
+        `;
+      }
+      
+      resultsSection.innerHTML = html;
+      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
