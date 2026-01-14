@@ -140,6 +140,7 @@ def _init_postgres_db():
                     is_churn_risk INTEGER,
                     is_escalation INTEGER,
                     is_revenue_impact INTEGER,
+                    is_lost_deal INTEGER,
                     signal_details TEXT,
                     priority_score TEXT,
                     ticket_fields TEXT,
@@ -151,6 +152,14 @@ def _init_postgres_db():
             # Add ticket_fields column if it doesn't exist (for existing databases)
             try:
                 cursor.execute('ALTER TABLE ticket_priorities ADD COLUMN ticket_fields TEXT')
+            except psycopg2.errors.DuplicateColumn:
+                conn.rollback()  # PostgreSQL requires rollback after error
+            except Exception:
+                conn.rollback()
+            
+            # Add is_lost_deal column if it doesn't exist (for existing databases)
+            try:
+                cursor.execute('ALTER TABLE ticket_priorities ADD COLUMN is_lost_deal INTEGER')
             except psycopg2.errors.DuplicateColumn:
                 conn.rollback()  # PostgreSQL requires rollback after error
             except Exception:
@@ -280,6 +289,7 @@ def _init_sqlite_db():
                     is_churn_risk INTEGER,
                     is_escalation INTEGER,
                     is_revenue_impact INTEGER,
+                    is_lost_deal INTEGER,
                     signal_details TEXT,
                     priority_score TEXT,
                     ticket_fields TEXT,
@@ -291,6 +301,12 @@ def _init_sqlite_db():
             # Add ticket_fields column if it doesn't exist (for existing databases)
             try:
                 conn.execute('ALTER TABLE ticket_priorities ADD COLUMN ticket_fields TEXT')
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+            
+            # Add is_lost_deal column if it doesn't exist (for existing databases)
+            try:
+                conn.execute('ALTER TABLE ticket_priorities ADD COLUMN is_lost_deal INTEGER')
             except sqlite3.OperationalError:
                 pass  # Column already exists
             
@@ -664,6 +680,7 @@ def save_ticket_priority(ticket_id, fields):
         1 if fields.get('is_churn_risk') else 0,
         1 if fields.get('is_escalation') else 0,
         1 if fields.get('is_revenue_impact') else 0,
+        1 if fields.get('is_lost_deal') else 0,
         fields.get('signal_details', ''),
         fields.get('priority_score', 'Medium'),
         ticket_fields_json,
@@ -684,8 +701,8 @@ def _save_ticket_priority_postgres(values):
             INSERT INTO ticket_priorities (
                 ticket_id, clear_description, ai_theme, product_area,
                 is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
-                signal_details, priority_score, ticket_fields, updated_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                is_lost_deal, signal_details, priority_score, ticket_fields, updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (ticket_id) DO UPDATE SET
                 clear_description = EXCLUDED.clear_description,
                 ai_theme = EXCLUDED.ai_theme,
@@ -694,6 +711,7 @@ def _save_ticket_priority_postgres(values):
                 is_churn_risk = EXCLUDED.is_churn_risk,
                 is_escalation = EXCLUDED.is_escalation,
                 is_revenue_impact = EXCLUDED.is_revenue_impact,
+                is_lost_deal = EXCLUDED.is_lost_deal,
                 signal_details = EXCLUDED.signal_details,
                 priority_score = EXCLUDED.priority_score,
                 ticket_fields = EXCLUDED.ticket_fields,
@@ -713,8 +731,8 @@ def _save_ticket_priority_sqlite(values):
                 INSERT OR REPLACE INTO ticket_priorities (
                     ticket_id, clear_description, ai_theme, product_area,
                     is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
-                    signal_details, priority_score, ticket_fields, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    is_lost_deal, signal_details, priority_score, ticket_fields, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', values)
             conn.commit()
     except sqlite3.Error as e:
@@ -778,7 +796,7 @@ def _get_recent_priorities_postgres(limit):
         cursor.execute('''
             SELECT ticket_id, clear_description, ai_theme, product_area,
                    is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
-                   priority_score, ticket_fields, created_at, updated_at
+                   is_lost_deal, priority_score, ticket_fields, created_at, updated_at
             FROM ticket_priorities 
             ORDER BY updated_at DESC 
             LIMIT %s
@@ -799,7 +817,7 @@ def _get_recent_priorities_sqlite(limit):
             cursor = conn.execute('''
                 SELECT ticket_id, clear_description, ai_theme, product_area,
                        is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
-                       priority_score, ticket_fields, created_at, updated_at
+                       is_lost_deal, priority_score, ticket_fields, created_at, updated_at
                 FROM ticket_priorities 
                 ORDER BY updated_at DESC 
                 LIMIT ?
@@ -830,6 +848,7 @@ def format_priority_for_display(row):
         'is_churn_risk': bool(row.get('is_churn_risk', 0)),
         'is_escalation': bool(row.get('is_escalation', 0)),
         'is_revenue_impact': bool(row.get('is_revenue_impact', 0)),
+        'is_lost_deal': bool(row.get('is_lost_deal', 0)),
         'signal_details': row.get('signal_details', ''),
         'priority_score': row.get('priority_score', 'Medium'),
         'ticket_fields': ticket_fields,

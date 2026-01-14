@@ -48,6 +48,7 @@ class PriorityAnalyzerService:
             - is_churn_risk: Whether there's churn risk mentioned
             - is_escalation: Whether this was escalated
             - is_revenue_impact: Whether there's revenue/enterprise impact
+            - is_lost_deal: Whether a lost deal or closed lost deal was mentioned
             - signal_details: Details about detected priority signals
             - priority_score: Overall priority (Critical/High/Medium/Low)
         """
@@ -110,6 +111,10 @@ Analyze this ticket and extract the following information:
    d) REVENUE IMPACT: Is there significant revenue/business impact?
       Look for: "enterprise", "large customer", "deal", "renewal", "revenue", "contract",
       "POC", "pilot", "evaluation", "big account", "strategic customer", "key account"
+   
+   e) LOST DEAL: Was a deal lost or closed lost mentioned?
+      Look for: "closed lost deal", "lost deal", "deal lost", "closed lost", 
+      "deal closed", "lost opportunity", "missed deal", "deal didn't close"
 
 5. PRIORITY SCORE:
    Calculate based on signals detected:
@@ -145,6 +150,10 @@ Is Revenue Impact:
 <Yes or No>
 <brief evidence if Yes, or "No revenue impact indicators detected" if No>
 
+Is Lost Deal:
+<Yes or No>
+<brief evidence if Yes, or "No lost deal indicators detected" if No>
+
 Priority Score:
 <Critical, High, Medium, or Low>
 <brief justification>
@@ -176,7 +185,7 @@ Priority Score:
                     next_sections = [
                         'Clear Description', 'AI Theme', 'Product Area',
                         'Is Blocker', 'Is Churn Risk', 'Is Escalation',
-                        'Is Revenue Impact', 'Priority Score'
+                        'Is Revenue Impact', 'Is Lost Deal', 'Priority Score'
                     ]
                 content = parts[1].strip()
                 for section in next_sections:
@@ -226,6 +235,9 @@ Priority Score:
         revenue_text = extract_section('Is Revenue Impact', output)
         is_revenue_impact, revenue_details = parse_yes_no_with_details(revenue_text)
         
+        lost_deal_text = extract_section('Is Lost Deal', output)
+        is_lost_deal, lost_deal_details = parse_yes_no_with_details(lost_deal_text)
+        
         # Parse priority score
         priority_text = extract_section('Priority Score', output)
         priority_lines = priority_text.strip().split('\n')
@@ -255,6 +267,8 @@ Priority Score:
             signal_details_parts.append(f"Escalation: {escalation_details}")
         if is_revenue_impact and revenue_details:
             signal_details_parts.append(f"Revenue Impact: {revenue_details}")
+        if is_lost_deal and lost_deal_details:
+            signal_details_parts.append(f"Lost Deal: {lost_deal_details}")
         if priority_justification:
             signal_details_parts.append(f"Priority: {priority_justification}")
         
@@ -268,6 +282,7 @@ Priority Score:
             'is_churn_risk': is_churn_risk,
             'is_escalation': is_escalation,
             'is_revenue_impact': is_revenue_impact,
+            'is_lost_deal': is_lost_deal,
             'signal_details': signal_details,
             'priority_score': priority_score
         }

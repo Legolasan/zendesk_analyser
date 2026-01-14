@@ -552,6 +552,19 @@
         <i class="fas fa-file-alt"></i> Priority Analysis Results
       </h2>
       
+      <!-- Lost Deal Warning Alert -->
+      {% if is_lost_deal %}
+      <div class="alert alert-modern fade-in" style="background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); color: white; border-radius: 15px; margin-bottom: 2rem; border: 2px solid #fff; box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+          <div>
+            <strong style="font-size: 1.2rem;">⚠️ Lost Deal Detected</strong>
+            <p style="margin: 0.5rem 0 0 0; font-size: 1rem;">This ticket mentions a closed lost deal or lost deal.</p>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      
       <!-- Priority Score Banner -->
       <div class="mb-4">
         <div class="d-flex align-items-center gap-3 flex-wrap">
@@ -730,6 +743,18 @@
         <h2 class="mb-4" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
           <i class="fas fa-file-alt"></i> Priority Analysis Results
         </h2>
+        
+        ${data.is_lost_deal ? `
+        <div class="alert alert-modern fade-in" style="background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); color: white; border-radius: 15px; margin-bottom: 2rem; border: 2px solid #fff; box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+            <div>
+              <strong style="font-size: 1.2rem;">⚠️ Lost Deal Detected</strong>
+              <p style="margin: 0.5rem 0 0 0; font-size: 1rem;">This ticket mentions a closed lost deal or lost deal.</p>
+            </div>
+          </div>
+        </div>
+        ` : ''}
         
         <div class="mb-4">
           <div class="d-flex align-items-center gap-3 flex-wrap">
