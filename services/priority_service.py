@@ -23,6 +23,82 @@ PRODUCT_AREAS = [
 ]
 
 
+def extract_deal_value(ticket_fields: Optional[Dict[str, str]] = None, signal_details: str = "") -> Optional[str]:
+    """
+    Extract deal/ARR value from ticket fields or AI-generated signal_details text.
+    
+    Priority:
+    1. Check ticket_fields for "Deal Value (in ARR)" field
+    2. Extract from signal_details text using regex patterns
+    
+    Args:
+        ticket_fields: Dictionary of ticket field_name -> value
+        signal_details: AI-generated signal details text
+        
+    Returns:
+        Extracted deal value as string (e.g., "5988"), or None if not found
+    """
+    # Priority 1: Check ticket_fields for "Deal Value (in ARR)"
+    if ticket_fields:
+        deal_value_field = ticket_fields.get("Deal Value (in ARR)")
+        if deal_value_field and str(deal_value_field).strip():
+            # Clean and return the value
+            value = str(deal_value_field).strip()
+            # Remove any currency symbols and commas for consistency
+            value = value.replace('$', '').replace(',', '').strip()
+            if value and value.replace('.', '').isdigit():
+                return value
+    
+    # Priority 2: Extract from signal_details text using regex
+    if signal_details:
+        # Regex patterns to match various deal value formats
+        patterns = [
+            r'deal\s+value\s+(?:of\s+)?[\$]?(\d[\d,\.]*)',           # "deal value of 5988" or "deal value $5988"
+            r'(\d[\d,\.]*)\s+(?:in\s+)?ARR',                          # "5988 in ARR" or "5988 ARR"
+            r'ARR\s+(?:of\s+)?[\$]?(\d[\d,\.]*)',                     # "ARR of 5988" or "ARR $5988"
+            r'\$(\d[\d,\.]*)\s+(?:in\s+)?ARR',                        # "$5988 in ARR"
+            r'potential\s+(?:deal\s+)?value\s+(?:of\s+)?[\$]?(\d[\d,\.]*)',  # "potential value of 5988"
+            r'revenue\s+(?:of|impact\s+of)?\s*[\$]?(\d[\d,\.]*)',    # "revenue of 5988" or "revenue impact of 5988"
+            r'(\d[\d,\.]*)\s+(?:in\s+)?annual\s+revenue',            # "5988 in annual revenue"
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, signal_details, re.IGNORECASE)
+            if match:
+                value = match.group(1).replace(',', '')
+                # Validate it's a reasonable number (at least 3 digits for ARR)
+                if value and len(value.replace('.', '')) >= 3:
+                    return value
+    
+    return None
+
+
+def format_deal_value_display(deal_value: str) -> str:
+    """
+    Format deal value for display with currency formatting.
+    
+    Args:
+        deal_value: Raw deal value string (e.g., "5988" or "5988.50")
+        
+    Returns:
+        Formatted string (e.g., "$5,988 ARR")
+    """
+    if not deal_value:
+        return ""
+    
+    try:
+        # Convert to float for formatting
+        value = float(deal_value.replace(',', ''))
+        # Format with comma separators, no decimal if whole number
+        if value == int(value):
+            formatted = f"${int(value):,}"
+        else:
+            formatted = f"${value:,.2f}"
+        return f"{formatted} ARR"
+    except (ValueError, TypeError):
+        return f"${deal_value} ARR"
+
+
 class PriorityAnalyzerService:
     """Service for analyzing ticket priority and extracting planning-relevant information."""
     

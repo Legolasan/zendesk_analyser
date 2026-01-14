@@ -582,6 +582,19 @@
         </div>
       </div>
 
+      <!-- Deal Value Section -->
+      {% if deal_value %}
+      <div style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); border-radius: 15px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(246, 211, 101, 0.3);">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <i class="fas fa-dollar-sign" style="font-size: 2rem; color: #333;"></i>
+          <div>
+            <strong style="font-size: 1rem; color: #555;">Deal Value</strong>
+            <p style="margin: 0; font-size: 1.5rem; font-weight: 700; color: #333;">${{ "{:,.0f}".format(deal_value|float) if deal_value else deal_value }} ARR</p>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
       <!-- Clear Description -->
       <h4 class="output-heading">
         <i class="fas fa-align-left"></i> Clear Description
@@ -767,6 +780,18 @@
             ${data.ai_theme ? `<span class="theme-badge"><i class="fas fa-tag"></i> ${escapeHtml(data.ai_theme)}</span>` : ''}
           </div>
         </div>
+
+        ${data.deal_value ? `
+        <div style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); border-radius: 15px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(246, 211, 101, 0.3);">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <i class="fas fa-dollar-sign" style="font-size: 2rem; color: #333;"></i>
+            <div>
+              <strong style="font-size: 1rem; color: #555;">Deal Value</strong>
+              <p style="margin: 0; font-size: 1.5rem; font-weight: 700; color: #333;">$${Number(data.deal_value).toLocaleString()} ARR</p>
+            </div>
+          </div>
+        </div>
+        ` : ''}
 
         <h4 class="output-heading">
           <i class="fas fa-align-left"></i> Clear Description
