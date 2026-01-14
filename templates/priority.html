@@ -577,6 +577,31 @@
         {{ clear_description }}
       </div>
 
+      <!-- Ticket Fields -->
+      {% if ticket_fields %}
+      <h4 class="output-heading">
+        <i class="fas fa-list-alt"></i> Ticket Fields
+      </h4>
+      <div class="card-modern" style="margin-bottom: 2rem;">
+        <div class="card-body-modern">
+          <div class="row">
+            {% for field_name, field_value in ticket_fields.items() %}
+            <div class="col-md-6 mb-3">
+              <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; padding: 1rem; border-left: 3px solid #11998e;">
+                <div style="font-weight: 600; color: #11998e; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                  {{ field_name }}
+                </div>
+                <div style="color: var(--text-primary); font-size: 1rem;">
+                  {{ field_value }}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
       <!-- Priority Signals -->
       <h4 class="output-heading">
         <i class="fas fa-exclamation-triangle"></i> Priority Signals
@@ -724,6 +749,30 @@
         <div class="description-box">
           ${escapeHtml(data.clear_description || 'No description available')}
         </div>
+
+        ${data.ticket_fields && Object.keys(data.ticket_fields).length > 0 ? `
+        <h4 class="output-heading">
+          <i class="fas fa-list-alt"></i> Ticket Fields
+        </h4>
+        <div class="card-modern" style="margin-bottom: 2rem;">
+          <div class="card-body-modern">
+            <div class="row">
+              ${Object.entries(data.ticket_fields).map(([fieldName, fieldValue]) => `
+                <div class="col-md-6 mb-3">
+                  <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; padding: 1rem; border-left: 3px solid #11998e;">
+                    <div style="font-weight: 600; color: #11998e; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                      ${escapeHtml(fieldName)}
+                    </div>
+                    <div style="color: var(--text-primary); font-size: 1rem;">
+                      ${escapeHtml(String(fieldValue))}
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        ` : ''}
 
         <h4 class="output-heading">
           <i class="fas fa-exclamation-triangle"></i> Priority Signals

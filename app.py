@@ -9,12 +9,14 @@ from requests.exceptions import Timeout, RequestException, ConnectionError as Re
 from zendesk_auth import zendesk_auth
 from services.openai_service import EnhancedOpenAIService
 from services.priority_service import PriorityAnalyzerService
+from utils.field_mapper import map_ticket_fields, get_field_mapping
 import errno
 
 # PostgreSQL support for Railway deployment
 try:
     import psycopg2
     import psycopg2.extras
+    import psycopg2.errors
     POSTGRES_AVAILABLE = True
 except ImportError:
     POSTGRES_AVAILABLE = False
@@ -140,10 +142,19 @@ def _init_postgres_db():
                     is_revenue_impact INTEGER,
                     signal_details TEXT,
                     priority_score TEXT,
+                    ticket_fields TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            
+            # Add ticket_fields column if it doesn't exist (for existing databases)
+            try:
+                cursor.execute('ALTER TABLE ticket_priorities ADD COLUMN ticket_fields TEXT')
+            except psycopg2.errors.DuplicateColumn:
+                conn.rollback()  # PostgreSQL requires rollback after error
+            except Exception:
+                conn.rollback()
             
             # Create index on ticket_priorities
             cursor.execute('''
@@ -271,10 +282,17 @@ def _init_sqlite_db():
                     is_revenue_impact INTEGER,
                     signal_details TEXT,
                     priority_score TEXT,
+                    ticket_fields TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            
+            # Add ticket_fields column if it doesn't exist (for existing databases)
+            try:
+                conn.execute('ALTER TABLE ticket_priorities ADD COLUMN ticket_fields TEXT')
+            except sqlite3.OperationalError:
+                pass  # Column already exists
             
             # Create index on ticket_priorities
             conn.execute('''
@@ -633,6 +651,10 @@ def save_ticket_priority(ticket_id, fields):
         print(f"ERROR: Invalid fields for ticket priority {ticket_id}")
         return
     
+    # Convert ticket_fields dict to JSON string for storage
+    ticket_fields_dict = fields.get('ticket_fields', {})
+    ticket_fields_json = json.dumps(ticket_fields_dict) if ticket_fields_dict else ''
+    
     values = (
         ticket_id,
         fields.get('clear_description', ''),
@@ -644,6 +666,7 @@ def save_ticket_priority(ticket_id, fields):
         1 if fields.get('is_revenue_impact') else 0,
         fields.get('signal_details', ''),
         fields.get('priority_score', 'Medium'),
+        ticket_fields_json,
         datetime.now().isoformat()
     )
     
@@ -661,8 +684,8 @@ def _save_ticket_priority_postgres(values):
             INSERT INTO ticket_priorities (
                 ticket_id, clear_description, ai_theme, product_area,
                 is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
-                signal_details, priority_score, updated_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                signal_details, priority_score, ticket_fields, updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (ticket_id) DO UPDATE SET
                 clear_description = EXCLUDED.clear_description,
                 ai_theme = EXCLUDED.ai_theme,
@@ -673,6 +696,7 @@ def _save_ticket_priority_postgres(values):
                 is_revenue_impact = EXCLUDED.is_revenue_impact,
                 signal_details = EXCLUDED.signal_details,
                 priority_score = EXCLUDED.priority_score,
+                ticket_fields = EXCLUDED.ticket_fields,
                 updated_at = EXCLUDED.updated_at
         ''', values)
         conn.commit()
@@ -689,8 +713,8 @@ def _save_ticket_priority_sqlite(values):
                 INSERT OR REPLACE INTO ticket_priorities (
                     ticket_id, clear_description, ai_theme, product_area,
                     is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
-                    signal_details, priority_score, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    signal_details, priority_score, ticket_fields, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', values)
             conn.commit()
     except sqlite3.Error as e:
@@ -754,7 +778,7 @@ def _get_recent_priorities_postgres(limit):
         cursor.execute('''
             SELECT ticket_id, clear_description, ai_theme, product_area,
                    is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
-                   priority_score, created_at, updated_at
+                   priority_score, ticket_fields, created_at, updated_at
             FROM ticket_priorities 
             ORDER BY updated_at DESC 
             LIMIT %s
@@ -775,7 +799,7 @@ def _get_recent_priorities_sqlite(limit):
             cursor = conn.execute('''
                 SELECT ticket_id, clear_description, ai_theme, product_area,
                        is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
-                       priority_score, created_at, updated_at
+                       priority_score, ticket_fields, created_at, updated_at
                 FROM ticket_priorities 
                 ORDER BY updated_at DESC 
                 LIMIT ?
@@ -788,6 +812,15 @@ def _get_recent_priorities_sqlite(limit):
 
 def format_priority_for_display(row):
     """Convert database row to display format for priorities."""
+    # Parse ticket_fields from JSON string if present
+    ticket_fields_str = row.get('ticket_fields', '')
+    ticket_fields = {}
+    if ticket_fields_str:
+        try:
+            ticket_fields = json.loads(ticket_fields_str) if isinstance(ticket_fields_str, str) else ticket_fields_str
+        except (json.JSONDecodeError, TypeError):
+            ticket_fields = {}
+    
     return {
         'ticket_id': row['ticket_id'],
         'clear_description': row.get('clear_description', ''),
@@ -799,6 +832,7 @@ def format_priority_for_display(row):
         'is_revenue_impact': bool(row.get('is_revenue_impact', 0)),
         'signal_details': row.get('signal_details', ''),
         'priority_score': row.get('priority_score', 'Medium'),
+        'ticket_fields': ticket_fields,
         'created_at': row.get('created_at', ''),
         'updated_at': row.get('updated_at', '')
     }
@@ -2480,6 +2514,14 @@ def priority_index():
                     ticket_data = ticket_response.json().get('ticket', {})
                     requester_id = ticket_data.get('requester_id')
                     
+                    # Extract custom_fields from ticket data and map them
+                    custom_fields = ticket_data.get('custom_fields', [])
+                    field_mapping = get_field_mapping()
+                    mapped_ticket_fields = map_ticket_fields(custom_fields, field_mapping)
+                    
+                    if mapped_ticket_fields:
+                        print(f"Ticket {ticket_id}: Mapped {len(mapped_ticket_fields)} ticket fields: {list(mapped_ticket_fields.keys())}")
+                    
                     # Step 2: Fetch all comments
                     comments_response = fetch_zendesk_ticket_comments(ticket_id, max_retries=3, base_timeout=30)
                     
@@ -2516,15 +2558,22 @@ def priority_index():
                         conversation = format_structured_conversation(ticket_data, all_comments)
                         
                         if conversation:
-                            # Step 4: Analyze priority with AI
+                            # Step 4: Analyze priority with AI (including ticket fields)
                             print(f"Starting priority analysis for ticket {ticket_id}...")
                             
                             if not priority_service:
                                 session['priority_error'] = "OpenAI API key is not configured."
                             else:
                                 try:
-                                    fields = priority_service.analyze_ticket_priority(conversation, timeout=60)
+                                    fields = priority_service.analyze_ticket_priority(
+                                        conversation, 
+                                        ticket_fields=mapped_ticket_fields if mapped_ticket_fields else None,
+                                        timeout=60
+                                    )
                                     print(f"Priority analysis complete for ticket {ticket_id}")
+                                    
+                                    # Add ticket_fields to fields dict for database storage
+                                    fields['ticket_fields'] = mapped_ticket_fields
                                     
                                     # Save to database
                                     save_ticket_priority(ticket_id, fields)

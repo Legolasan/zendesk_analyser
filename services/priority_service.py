@@ -7,6 +7,7 @@ import json
 import re
 from typing import Dict, List, Optional
 from openai import OpenAI, OpenAIError
+from utils.field_mapper import format_fields_for_prompt
 
 
 # Predefined Hevo product areas for mapping
@@ -29,12 +30,13 @@ class PriorityAnalyzerService:
         self.client = OpenAI(api_key=api_key)
         self.model = model
     
-    def analyze_ticket_priority(self, conversation: str, timeout: int = 60) -> Dict:
+    def analyze_ticket_priority(self, conversation: str, ticket_fields: Optional[Dict[str, str]] = None, timeout: int = 60) -> Dict:
         """
         Analyze a ticket conversation to extract priority-relevant information for Q1 planning.
         
         Args:
             conversation: The full ticket conversation text with [CUSTOMER]/[AGENT] labels
+            ticket_fields: Optional dictionary of ticket field_name -> value for context
             timeout: Timeout in seconds
             
         Returns:
@@ -49,10 +51,15 @@ class PriorityAnalyzerService:
             - signal_details: Details about detected priority signals
             - priority_score: Overall priority (Critical/High/Medium/Low)
         """
+        # Format ticket fields as context if provided
+        fields_context = ""
+        if ticket_fields:
+            fields_context = format_fields_for_prompt(ticket_fields)
+        
         prompt = f"""
 You are analyzing a Zendesk support ticket to help with Q1 planning prioritization.
 
-CONVERSATION FORMAT:
+{fields_context}CONVERSATION FORMAT:
 - [CUSTOMER]: Messages from the customer who reported the issue
 - [AGENT]: Public responses from support agents
 - [AGENT - INTERNAL]: Internal notes (engineering discussions, root cause analysis)

@@ -1,0 +1,136 @@
+Display name,Type,Field ID,Date modified,Tags
+Account owner,Text,20771262323609,2025-05-13,Custom field
+Account Segmentation,Drop-down,18787445297817,2025-05-13,Custom field
+Account TAM,Text,37024289753369,2025-05-13,Custom field
+Actionable Goal,Drop-down,47413383003289,2025-05-27,Custom field
+Activate,Text,47695123615385,2025-06-05,Custom field
+Approval status,Drop-down,48903136526105,2025-07-15,Custom field
+Assignee,Drop-down,360001093293,2025-05-13,Standard field
+Audit Log,Text,47605423121177,2025-06-02,Custom field
+Billing,Text,47605453532825,2025-06-02,Custom field
+Certification/Compliance,Text,47605459524249,2025-06-02,Custom field
+Closure Type,Drop-down,28942284045721,2025-05-27,Custom field
+Competition Involved,Drop-down,18939888652569,2025-05-13,Custom field
+Component,Drop-down,50074879465497,2025-09-19,Custom field
+Conversation Type,Drop-down,6343868668825,2025-10-30,Custom field
+Correction verification outcome,Drop-down,47657356498457,2025-06-04,Custom field
+Cost saving,Text,47366103580697,2025-05-26,Custom field
+Critical deal?,Drop-down,44509699970457,2025-05-13,Custom field
+Customer commitment,Drop-down,47366336581145,2025-07-28,Custom field
+Customer Escalated,Text,24714433991321,2025-05-13,Custom field
+Customer Lifecycle Stage,Drop-down,47413101194265,2025-05-27,Custom field
+Customer Name,Text,49138745436441,2025-12-23,Custom field
+Customer reported Issue,Drop-down,39604979145241,2024-12-09,Custom field
+"Customer Symptom Area ",Text,50122158546201,2025-08-26,Custom field
+Customer Symptom Reported,Text,50122226972313,2025-08-26,Custom field
+Customer Team ID,Text,27943077254809,2025-05-13,Custom field
+Data quality review,Drop-down,47657334354841,2025-06-04,Custom field
+Deal commitment,Drop-down,47366609134873,2025-07-28,Custom field
+Deal size,Drop-down,19287352299033,2025-05-13,Custom field
+Deal Value (in ARR),Numeric,50198956158617,2025-08-28,Custom field
+Description,Multi-line,360001093193,2023-09-12,Standard field
+Destination,Drop-down,6344872858265,2025-05-13,Custom field
+DOC JIRA #,Text,360027795613,2025-06-09,Custom field
+Documentation,Drop-down,45642570298905,2025-05-13,Custom field
+Due-date,Date,47366437642393,2025-05-26,Custom field
+EDGE Transition Stage,Text,52582360507033,2025-11-19,Custom field
+Env,Drop-down,21010519389977,2025-05-13,Custom field
+Escalation summary,Multi-line,31369690079641,2025-05-13,Custom field
+Existing Source Config Change,Drop-down,47605280072473,2025-06-02,Custom field
+External API,Text,47605298996377,2025-06-02,Custom field
+Feature Request Title,Text,49277175956377,2025-07-28,Custom field
+Fields compliance check,Checkbox,32700911122969,2025-05-13,Custom field
+Fivetran parity,Drop-down,47366530736921,2025-07-28,Custom field
+Form Completion Check,Checkbox,47860383447577,2025-07-28,Custom field
+Group,Drop-down,360001093273,2025-05-13,Standard field
+Growth,Text,47366069746457,2025-05-26,Custom field
+H2 JIRA ACTION,Drop-down,53959387408025,2026-01-05,Custom field
+HB_ZD_FR,Text,49278300976281,2025-07-28,Custom field
+Hours Spent [Assignee] dropdown [API],Drop-down,49404020253849,2025-08-26,Custom field
+Hours Spent [Secondary] dropdown [API],Drop-down,49404118763673,2025-08-26,Custom field
+Impact,Drop-down,10453700259737,2025-05-13,Custom field
+Impact Level,Drop-down,47413630035481,2025-06-02,Custom field
+Impact to Hevo - Retention value,Numeric,53579979659417,2025-12-22,Custom field
+Impact to Hevo - Upsell potential,Numeric,53579969564697,2025-12-22,Custom field
+Issue Category,Drop-down,6344644001689,2025-09-02,Custom field
+Issue Description,Multi-line,47413191760665,2025-05-27,Custom field
+Issue reason,Drop-down,16459605909657,2025-05-13,Custom field
+Issue-Category,Drop-down,50074936676377,2025-08-28,Custom field
+JIRA Key,Text,7716967315353,2025-05-13,Custom field
+JIRA Status,Multi-line,22135466063385,2025-05-13,Custom field
+JIRA status - Copy,Drop-down,52753838926105,2025-11-25,Custom field
+KB Link,Text,22721286113305,2025-05-13,Custom field
+KB Present,Drop-down,19536150624409,2025-05-13,Custom field
+KB Status,Drop-down,47414255904537,2025-05-27,Custom field
+Manager audit result,Drop-down,47657420492569,2025-06-04,Custom field
+Models,Drop-down,47605241090457,2025-06-02,Custom field
+Monthly Plan Tier,Drop-down,9774746026137,2025-08-28,Custom field
+Move to PM,Drop-down,49277345034649,2025-07-28,Custom field
+New Destination,Text,47601744118553,2025-06-02,Custom field
+New destination capability,Text,47601768404761,2025-06-02,Custom field
+New Source,Text,47601699917081,2025-06-02,Custom field
+Observability,Drop-down,47605322354457,2025-06-05,Custom field
+Observability details,Text,47699657638553,2025-06-05,Custom field
+"Occurrence ",Drop-down,47408148433561,2025-08-24,Custom field
+Oncall priority,Drop-down,10486891405849,2025-05-13,Custom field
+Orchestration,Drop-down,47696549214233,2025-06-05,Custom field
+Orchestration details,Text,47699624422425,2025-06-05,Custom field
+Original ticket ID,Text,47659351705241,2025-06-04,Custom field
+Other,Multi-line,47605448600985,2025-06-02,Custom field
+Outcome Categorization,Drop-down,47860991329305,2025-07-28,Custom field
+Pipeline configuration,Drop-down,47605184977305,2025-06-05,Custom field
+Pipeline configuration details,Text,47699656015641,2025-06-05,Custom field
+Pipeline mode,Drop-down,35234489230233,2025-06-09,Custom field
+Pipeline Number,Numeric,7794536184217,2025-05-13,Custom field
+Platform,Drop-down,40860554056601,2024-12-09,Custom field
+Premium Customer,Drop-down,6513677034137,2025-05-13,Custom field
+Priority,Drop-down,360001093253,2025-05-13,Standard field
+Product Area,Drop-down,6343881959449,2025-05-08,Custom field
+Product team feedback,Multi-line,48081199099033,2025-06-18,Custom field
+Product Vertical,Drop-down,50074786197657,2025-08-28,Custom field
+RCA Summary,Multi-line,47413236731161,2025-05-27,Custom field
+Reason for first reopen,Drop-down,10343390026649,2025-05-13,Custom field
+Reason for raising the ticket,Drop-down,7794811597081,2025-05-27,Custom field
+Reason for Ticket,Drop-down,47409496523673,2025-07-07,Custom field
+Reason for Ticket - Ask,Drop-down,47412201362073,2025-07-07,Custom field
+Relevant Details,Text,49276047881369,2025-07-28,Custom field
+Reopen Reason,Drop-down,47413816539289,2025-06-03,Custom field
+Reproducibility,Drop-down,47408606725913,2025-06-02,Custom field
+Request Category,Drop-down,49139242724633,2025-08-28,Custom field
+Resolution Breach Reason,Drop-down,47408906261145,2025-05-27,Custom field
+Resolution Category,Drop-down,47411959319193,2025-11-25,Custom field
+Resolution Description,Multi-line,50102567398169,2025-08-25,Custom field
+Resolution GT 48 Hours,Drop-down,43876936660121,2025-05-13,Custom field
+Resolution type,Drop-down,52177970251929,2025-11-05,Custom field
+Reviewed by product team,Drop-down,48117227562905,2025-06-19,Custom field
+RICE Score,Decimal,50313352543769,2025-09-01,Custom field
+Root Cause,Drop-down,50074947488025,2025-08-25,Custom field
+Root Cause Description,Multi-line,8946648806809,2025-08-25,Custom field
+Root Cause Identified,Drop-down,47411876657177,2025-07-07,Custom field
+secondary working log [API],Multi-line,49454188329241,2025-08-03,Custom field
+Security,Drop-down,47605435561497,2025-06-05,Custom field
+Security details,Text,47699680905369,2025-06-05,Custom field
+Severity,Drop-down,8415300134041,2025-05-13,Custom field
+should_skip_api_automation [do not enable],Checkbox,50256840004505,2025-08-30,Custom field
+Source,Drop-down,6344831219737,2025-06-10,Custom field
+Source_QA,Drop-down,48220834934809,2025-06-23,Custom field
+SPAM,Drop-down,47659241589145,2025-06-16,Custom field
+Subject,Text,360001093173,2024-12-18,Standard field
+Support Hours Spent - Assignee,Decimal,47408859634969,2025-05-27,Custom field
+"Support Hours Spent - Details ",Multi-line,47418430228633,2025-05-27,Custom field
+Support Hours Spent - Secondary,Decimal,47418392424217,2025-05-27,Custom field
+Symptom Area,Drop-down,47408611603353,2025-07-03,Custom field
+Symptom Area,Text,50124255821465,2025-08-26,Custom field
+"Symptom Reported ",Drop-down,47413259480089,2025-07-01,Custom field
+Symptom Reported,Text,50124286524185,2025-08-26,Custom field
+Symptom reported - Pipeline,Drop-down,47408749493145,2025-05-27,Custom field
+Team ID,Numeric,27861711161369,2025-05-13,Custom field
+Test_2,Text,47449170570265,2025-05-28,Custom field
+Ticket status,Drop-down,11230015687321,2025-05-13,Standard field
+Transformations,Text,47605319918489,2025-06-02,Custom field
+Truncate and Load,Text,47605426814745,2025-06-02,Custom field
+Urgency,Drop-down,49138927053465,2025-07-28,Custom field
+Use Case,Drop-down,49138866991257,2025-07-28,Custom field
+User Management,Drop-down,47605358284569,2025-06-02,Custom field
+Workaround accepted,Drop-down,47498367469081,2025-08-28,Custom field
+Workaround available,Drop-down,47498314998041,2025-07-28,Custom field
