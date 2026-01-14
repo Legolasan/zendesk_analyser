@@ -2458,12 +2458,19 @@ def priority_index():
     # Retrieve data from database if ticket_id is present
     priority_data = {}
     if ticket_id:
-        priority_row = get_ticket_priority(ticket_id)
-        if priority_row:
-            priority_data = format_priority_for_display(priority_row)
+        try:
+            priority_row = get_ticket_priority(ticket_id)
+            if priority_row:
+                priority_data = format_priority_for_display(priority_row)
+        except Exception as e:
+            print(f"Error retrieving priority data for ticket {ticket_id}: {str(e)}")
     
     # Get recent priorities for display
-    recent_priorities = get_recent_priorities(limit=5)
+    try:
+        recent_priorities = get_recent_priorities(limit=5)
+    except Exception as e:
+        print(f"Error retrieving recent priorities: {str(e)}")
+        recent_priorities = []
     
     return render_template('priority.html', 
                            ticket_id=ticket_id, 
