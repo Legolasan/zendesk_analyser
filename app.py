@@ -930,6 +930,12 @@ def format_structured_conversation(ticket_data, comments):
     requester_id = ticket_data.get('requester_id')
     formatted_parts = []
     
+    # Debug: Track comment types
+    public_count = 0
+    internal_count = 0
+    customer_count = 0
+    empty_count = 0
+    
     for comment in comments:
         author_id = comment.get('author_id')
         is_public = comment.get('public', True)
@@ -938,18 +944,33 @@ def format_structured_conversation(ticket_data, comments):
         
         # Skip empty comments
         if not body:
+            empty_count += 1
             continue
         
         # Determine speaker label based on author and visibility
         if author_id == requester_id:
             label = "[CUSTOMER]"
+            customer_count += 1
         elif is_public:
             label = "[AGENT]"
+            public_count += 1
         else:
             label = "[AGENT - INTERNAL]"  # Internal notes - often contain engineering discussions
+            internal_count += 1
         
         # Format with label and timestamp for context
         formatted_parts.append(f"{label} ({created_at}):\n{body}")
+    
+    # Debug log (only for ticket 64258 to avoid spam)
+    ticket_id = ticket_data.get('id')
+    if ticket_id == 64258 or str(ticket_id) == '64258':
+        print(f"DEBUG format_structured_conversation for ticket {ticket_id}:")
+        print(f"  Total comments: {len(comments)}")
+        print(f"  Customer comments: {customer_count}")
+        print(f"  Public agent comments: {public_count}")
+        print(f"  Internal agent comments: {internal_count}")
+        print(f"  Empty comments skipped: {empty_count}")
+        print(f"  Formatted parts: {len(formatted_parts)}")
     
     return "\n\n---\n\n".join(formatted_parts)
 
@@ -2418,6 +2439,15 @@ def priority_index():
                     else:
                         comments_data = comments_response.json()
                         all_comments = comments_data.get('comments', [])
+                        
+                        # Debug: Log comment types for ticket 64258
+                        if ticket_id == '64258' or ticket_id == 64258:
+                            public_count = sum(1 for c in all_comments if c.get('public', True))
+                            internal_count = sum(1 for c in all_comments if not c.get('public', True))
+                            print(f"DEBUG Ticket {ticket_id}: {len(all_comments)} total comments ({public_count} public, {internal_count} internal)")
+                            if internal_count == 0:
+                                print(f"WARNING: No internal comments found for ticket {ticket_id}!")
+                                print(f"Sample comment keys: {list(all_comments[0].keys()) if all_comments else 'No comments'}")
                         
                         # Step 3: Format conversation
                         conversation = format_structured_conversation(ticket_data, all_comments)
