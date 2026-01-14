@@ -2462,6 +2462,8 @@ def priority_index():
             priority_row = get_ticket_priority(ticket_id)
             if priority_row:
                 priority_data = format_priority_for_display(priority_row)
+                # Remove ticket_id from priority_data to avoid duplicate keyword argument
+                priority_data.pop('ticket_id', None)
         except Exception as e:
             print(f"Error retrieving priority data for ticket {ticket_id}: {str(e)}")
     
