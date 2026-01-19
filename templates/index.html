@@ -464,6 +464,8 @@
             </div>
         </div>
         
+        <!-- Search Results (populated by JavaScript) -->
+        <div id="search_results" style="display: none; margin-bottom: 20px;"></div>
         
         <!-- Recent Tickets -->
         <div id="recent_tickets">
@@ -708,6 +710,7 @@
 
   <script>
     let loaderTimeout;
+    const resultsDiv = document.getElementById('search_results');
     
     // Show loader when form is submitted
     document.querySelector('form').addEventListener('submit', function() {
@@ -784,7 +787,8 @@
     // Clear search
     function clearSearch() {
       document.getElementById('search_tickets').value = '';
-      // Search results removed
+      resultsDiv.style.display = 'none';
+      resultsDiv.innerHTML = '';
     }
 
     // Load ticket from database and display it
