@@ -27,7 +27,7 @@ class BulkJobManager:
         """Check if a job is currently running."""
         return job_id in self._active_jobs and self._active_jobs[job_id]
     
-    def start_job(self, job_id: str, ticket_ids: List[str]):
+    def start_job(self, job_id: str, ticket_ids: List[str], run_test_case: bool = True, run_priority: bool = True):
         """Start a background job to process tickets."""
         if self.is_job_running(job_id):
             print(f"Job {job_id} is already running")
@@ -36,7 +36,7 @@ class BulkJobManager:
         self._active_jobs[job_id] = True
         thread = threading.Thread(
             target=self._run_job,
-            args=(job_id, ticket_ids),
+            args=(job_id, ticket_ids, run_test_case, run_priority),
             daemon=True
         )
         self._job_threads[job_id] = thread
@@ -48,7 +48,7 @@ class BulkJobManager:
         if job_id in self._active_jobs:
             self._active_jobs[job_id] = False
     
-    def _run_job(self, job_id: str, ticket_ids: List[str]):
+    def _run_job(self, job_id: str, ticket_ids: List[str], run_test_case: bool = True, run_priority: bool = True):
         """Internal method to run the job processing."""
         # Import here to avoid circular imports
         from app import (
@@ -65,11 +65,17 @@ class BulkJobManager:
         from services.priority_service import PriorityAnalyzerService, extract_deal_value
         import os
         
-        # Initialize priority service for this thread
+        # Initialize priority service for this thread (only if needed)
         api_key = os.environ.get('OPENAI_API_KEY')
-        priority_service = PriorityAnalyzerService(api_key=api_key, model="gpt-4o") if api_key else None
+        priority_service = PriorityAnalyzerService(api_key=api_key, model="gpt-4o") if (api_key and run_priority) else None
         
-        print(f"Starting bulk job {job_id} with {len(ticket_ids)} tickets")
+        analysis_types = []
+        if run_test_case:
+            analysis_types.append("Test Case")
+        if run_priority:
+            analysis_types.append("Priority")
+        
+        print(f"Starting bulk job {job_id} with {len(ticket_ids)} tickets (Analysis: {', '.join(analysis_types)})")
         
         # Update job status to running
         update_bulk_job(job_id, status='running')
@@ -108,7 +114,9 @@ class BulkJobManager:
                     save_ticket_priority,
                     get_field_mapping,
                     map_ticket_fields,
-                    extract_deal_value
+                    extract_deal_value,
+                    run_test_case=run_test_case,
+                    run_priority=run_priority
                 )
                 
                 if result['success']:
@@ -167,15 +175,19 @@ def process_single_ticket(
     save_ticket_priority,
     get_field_mapping,
     map_ticket_fields,
-    extract_deal_value
+    extract_deal_value,
+    run_test_case: bool = True,
+    run_priority: bool = True
 ) -> Dict:
     """
-    Process a single ticket: fetch from Zendesk, run both analyses, save to database.
+    Process a single ticket: fetch from Zendesk, run selected analyses, save to database.
     
     Args:
         ticket_id: Zendesk ticket ID
         priority_service: PriorityAnalyzerService instance
         ... other function references to avoid circular imports
+        run_test_case: Whether to run test case analysis
+        run_priority: Whether to run priority analysis
         
     Returns:
         Dict with 'success' bool and optional 'error' message
@@ -210,20 +222,21 @@ def process_single_ticket(
         if not conversation:
             return {'success': False, 'error': "No conversation found"}
         
-        # Step 4: Run test case analysis
-        try:
-            test_case_fields = get_ticket_analysis(conversation, ticket_id=ticket_id, timeout=120)
-            if test_case_fields and isinstance(test_case_fields, dict):
-                save_ticket_summary(ticket_id, test_case_fields)
-                print(f"  Ticket {ticket_id}: Test case analysis saved")
-            else:
-                print(f"  Ticket {ticket_id}: Test case analysis returned invalid result")
-        except Exception as e:
-            print(f"  Ticket {ticket_id}: Test case analysis failed: {str(e)[:100]}")
-            # Continue with priority analysis even if test case fails
+        # Step 4: Run test case analysis (if enabled)
+        if run_test_case:
+            try:
+                test_case_fields = get_ticket_analysis(conversation, ticket_id=ticket_id, timeout=120)
+                if test_case_fields and isinstance(test_case_fields, dict):
+                    save_ticket_summary(ticket_id, test_case_fields)
+                    print(f"  Ticket {ticket_id}: Test case analysis saved")
+                else:
+                    print(f"  Ticket {ticket_id}: Test case analysis returned invalid result")
+            except Exception as e:
+                print(f"  Ticket {ticket_id}: Test case analysis failed: {str(e)[:100]}")
+                # Continue with priority analysis even if test case fails
         
-        # Step 5: Run priority analysis
-        if priority_service:
+        # Step 5: Run priority analysis (if enabled)
+        if run_priority and priority_service:
             try:
                 priority_fields = priority_service.analyze_ticket_priority(
                     conversation,
@@ -254,19 +267,21 @@ def process_single_ticket(
         return {'success': False, 'error': str(e)[:200]}
 
 
-def start_bulk_job(job_id: str, ticket_ids: List[str]) -> bool:
+def start_bulk_job(job_id: str, ticket_ids: List[str], run_test_case: bool = True, run_priority: bool = True) -> bool:
     """
     Start a bulk processing job.
     
     Args:
         job_id: UUID for the job
         ticket_ids: List of Zendesk ticket IDs to process
+        run_test_case: Whether to run test case analysis
+        run_priority: Whether to run priority analysis
         
     Returns:
         True if job started successfully, False otherwise
     """
     manager = BulkJobManager()
-    return manager.start_job(job_id, ticket_ids)
+    return manager.start_job(job_id, ticket_ids, run_test_case=run_test_case, run_priority=run_priority)
 
 
 def get_job_status(job_id: str) -> Optional[Dict]:

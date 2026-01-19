@@ -3058,13 +3058,22 @@ def bulk_index():
                     seen.add(tid)
                     unique_ticket_ids.append(tid)
             
+            # Get analysis type options
+            run_test_case = request.form.get('run_test_case') == '1'
+            run_priority = request.form.get('run_priority') == '1'
+            
+            # Validate at least one is selected
+            if not run_test_case and not run_priority:
+                session['bulk_error'] = "Please select at least one analysis type."
+                return redirect(url_for('bulk_index'))
+            
             # Create bulk job
             job_id = str(uuid.uuid4())
             create_bulk_job(job_id, len(unique_ticket_ids))
             
-            # Start background processing
+            # Start background processing with analysis options
             from bulk_processor import start_bulk_job
-            start_bulk_job(job_id, unique_ticket_ids)
+            start_bulk_job(job_id, unique_ticket_ids, run_test_case=run_test_case, run_priority=run_priority)
             
             print(f"Bulk job {job_id} created with {len(unique_ticket_ids)} tickets")
             

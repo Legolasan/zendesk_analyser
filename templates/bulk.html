@@ -379,6 +379,15 @@
       .status-pending {
         color: #868e96;
       }
+
+      .toggle-option:has(input:checked) {
+        border-color: #f093fb;
+        background: rgba(240, 147, 251, 0.1);
+      }
+
+      .toggle-option:hover {
+        border-color: #f093fb;
+      }
     </style>
 </head>
 <body>
@@ -425,6 +434,24 @@
               <p class="text-muted small" id="file-name">CSV file with ticket_id column</p>
             </div>
           </div>
+          
+          <div class="mb-4">
+            <label class="form-label">
+              <i class="fas fa-cogs"></i> Analysis Type
+            </label>
+            <div class="analysis-toggles" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+              <label class="toggle-option" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem 1rem; background: #f8f9fa; border-radius: 10px; border: 2px solid transparent; transition: all 0.3s ease;">
+                <input type="checkbox" name="run_test_case" value="1" checked style="width: 18px; height: 18px; accent-color: #f093fb;">
+                <span style="font-weight: 500;"><i class="fas fa-clipboard-check" style="color: #667eea;"></i> Test Case Analysis</span>
+              </label>
+              <label class="toggle-option" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem 1rem; background: #f8f9fa; border-radius: 10px; border: 2px solid transparent; transition: all 0.3s ease;">
+                <input type="checkbox" name="run_priority" value="1" checked style="width: 18px; height: 18px; accent-color: #f093fb;">
+                <span style="font-weight: 500;"><i class="fas fa-chart-line" style="color: #11998e;"></i> Priority Analysis</span>
+              </label>
+            </div>
+            <small class="text-muted mt-2 d-block">Select at least one analysis type to run</small>
+          </div>
+          
           <button type="submit" class="btn btn-primary-modern w-100" id="submit-btn">
             <i class="fas fa-rocket"></i> Start Processing
           </button>
@@ -536,6 +563,25 @@
   <script>
     let currentJobId = '{{ active_job_id }}';
     let pollingInterval = null;
+
+    // Form validation
+    document.getElementById('upload-form').addEventListener('submit', function(e) {
+      const testCaseChecked = document.querySelector('input[name="run_test_case"]').checked;
+      const priorityChecked = document.querySelector('input[name="run_priority"]').checked;
+      
+      if (!testCaseChecked && !priorityChecked) {
+        e.preventDefault();
+        alert('Please select at least one analysis type (Test Case or Priority).');
+        return false;
+      }
+      
+      const fileInput = document.getElementById('csv_file');
+      if (!fileInput.files.length) {
+        e.preventDefault();
+        alert('Please select a CSV file to upload.');
+        return false;
+      }
+    });
 
     // File upload handling
     const uploadArea = document.getElementById('upload-area');
