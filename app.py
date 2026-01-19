@@ -3168,14 +3168,31 @@ def health_check():
     })
 
 
+def mask_database_url(url):
+    """Mask password in database URL for safe logging."""
+    if not url:
+        return None
+    import re
+    # Match postgresql://user:password@host:port/db and mask the password
+    masked = re.sub(r'(://[^:]+:)[^@]+(@)', r'\1****\2', url)
+    return masked
+
+
 @app.route('/health/db')
 def database_health_check():
     """Database connection health check with detailed diagnostics."""
+    # Log DATABASE_URL for debugging (masked)
+    masked_url = mask_database_url(DATABASE_URL)
+    print(f"[DB Health Check] DATABASE_URL: {masked_url}")
+    print(f"[DB Health Check] POSTGRES_AVAILABLE: {POSTGRES_AVAILABLE}")
+    print(f"[DB Health Check] USE_POSTGRES: {USE_POSTGRES}")
+    
     result = {
         'timestamp': datetime.now().isoformat(),
         'database_type': 'PostgreSQL' if USE_POSTGRES else 'SQLite',
         'postgres_available': POSTGRES_AVAILABLE,
         'database_url_set': DATABASE_URL is not None,
+        'database_url_masked': masked_url,
         'connection': 'unknown',
         'tables': {},
         'errors': []
