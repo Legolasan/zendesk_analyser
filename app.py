@@ -600,7 +600,7 @@ def _get_ticket_summary_postgres(ticket_id):
         conn.close()
         
         if row:
-            return dict(row)
+            return _convert_datetime_fields(dict(row))
         return None
     except Exception as e:
         print(f"Error retrieving ticket summary from PostgreSQL: {str(e)}")
@@ -635,6 +635,15 @@ def get_recent_tickets(limit=10):
     else:
         return _get_recent_tickets_sqlite(limit)
 
+def _convert_datetime_fields(row_dict):
+    """Convert datetime fields to ISO format strings for template compatibility."""
+    for key in ['created_at', 'updated_at']:
+        if key in row_dict and row_dict[key] is not None:
+            if hasattr(row_dict[key], 'isoformat'):
+                row_dict[key] = row_dict[key].isoformat()
+    return row_dict
+
+
 def _get_recent_tickets_postgres(limit):
     """Get recent tickets from PostgreSQL."""
     try:
@@ -651,7 +660,7 @@ def _get_recent_tickets_postgres(limit):
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
-        return [dict(row) for row in rows]
+        return [_convert_datetime_fields(dict(row)) for row in rows]
     except Exception as e:
         print(f"Error retrieving recent tickets from PostgreSQL: {str(e)}")
         return []
@@ -707,7 +716,7 @@ def _search_tickets_postgres(query):
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
-        return [dict(row) for row in rows]
+        return [_convert_datetime_fields(dict(row)) for row in rows]
     except Exception as e:
         print(f"Error searching tickets in PostgreSQL: {str(e)}")
         return []
@@ -841,7 +850,7 @@ def _get_ticket_priority_postgres(ticket_id):
         cursor.close()
         conn.close()
         if row:
-            return dict(row)
+            return _convert_datetime_fields(dict(row))
         return None
     except Exception as e:
         print(f"Error retrieving ticket priority from PostgreSQL: {str(e)}")
@@ -887,7 +896,7 @@ def _get_recent_priorities_postgres(limit):
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
-        return [dict(row) for row in rows]
+        return [_convert_datetime_fields(dict(row)) for row in rows]
     except Exception as e:
         print(f"Error retrieving recent priorities from PostgreSQL: {str(e)}")
         return []
@@ -1023,7 +1032,7 @@ def _get_bulk_job_postgres(job_id):
         cursor.close()
         conn.close()
         if row:
-            result = dict(row)
+            result = _convert_datetime_fields(dict(row))
             # Parse ticket_results JSON
             if result.get('ticket_results'):
                 try:
@@ -1169,7 +1178,7 @@ def _get_recent_bulk_jobs_postgres(limit):
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
-        return [dict(row) for row in rows]
+        return [_convert_datetime_fields(dict(row)) for row in rows]
     except Exception as e:
         print(f"Error retrieving recent bulk jobs from PostgreSQL: {str(e)}")
         return []
