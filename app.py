@@ -1225,8 +1225,26 @@ def format_ticket_for_display(row):
     elif not isinstance(test_cases, list):
         test_cases = []
     
+    # Parse documentation_references if it's a JSON string
+    doc_refs = row.get('documentation_references', '')
+    if isinstance(doc_refs, str) and doc_refs:
+        try:
+            doc_refs = json.loads(doc_refs)
+        except (json.JSONDecodeError, TypeError):
+            doc_refs = []
+    elif not isinstance(doc_refs, list):
+        doc_refs = []
+    
     # Get primary test case for backward compatibility
     primary_test_case = test_cases[0] if test_cases else {}
+    
+    # Convert datetime fields to strings if needed
+    created_at = row.get('created_at', '')
+    updated_at = row.get('updated_at', '')
+    if hasattr(created_at, 'isoformat'):
+        created_at = created_at.isoformat()
+    if hasattr(updated_at, 'isoformat'):
+        updated_at = updated_at.isoformat()
     
     return {
         'ticket_id': row['ticket_id'],
@@ -1248,9 +1266,13 @@ def format_ticket_for_display(row):
         'additional_test_scenarios': row.get('additional_test_scenarios', ''),
         'search_queries_used': search_queries if isinstance(search_queries, list) else [],
         'search_results_summary': row.get('search_results_summary', ''),
+        'documentation_references': doc_refs,
+        'is_documented_limitation': bool(row.get('is_documented_limitation', 0)),
+        'is_documented_prerequisite': bool(row.get('is_documented_prerequisite', 0)),
+        'documentation_check_summary': row.get('documentation_check_summary', ''),
         'ai_provider': row.get('ai_provider', 'Unknown'),
-        'created_at': row.get('created_at', ''),
-        'updated_at': row.get('updated_at', '')
+        'created_at': created_at,
+        'updated_at': updated_at
     }
 
 # Initialize database on app startup
@@ -3193,6 +3215,49 @@ def health_check():
         'status': 'healthy',
         'timestamp': datetime.now().isoformat()
     })
+
+
+@app.route('/api/debug/ticket/<ticket_id>')
+def debug_ticket(ticket_id):
+    """Debug endpoint to check raw ticket data in database."""
+    result = {
+        'ticket_id': ticket_id,
+        'database_type': 'PostgreSQL' if USE_POSTGRES else 'SQLite',
+        'ticket_summary': None,
+        'ticket_priority': None,
+        'errors': []
+    }
+    
+    try:
+        # Check ticket_summaries
+        summary = get_ticket_summary(ticket_id)
+        if summary:
+            result['ticket_summary'] = {
+                'found': True,
+                'keys': list(summary.keys()),
+                'issue_description_length': len(summary.get('issue_description', '') or ''),
+                'has_test_cases': bool(summary.get('test_cases')),
+            }
+        else:
+            result['ticket_summary'] = {'found': False}
+    except Exception as e:
+        result['errors'].append(f"Error fetching summary: {str(e)}")
+    
+    try:
+        # Check ticket_priorities
+        priority = get_ticket_priority(ticket_id)
+        if priority:
+            result['ticket_priority'] = {
+                'found': True,
+                'keys': list(priority.keys()),
+                'priority_score': priority.get('priority_score'),
+            }
+        else:
+            result['ticket_priority'] = {'found': False}
+    except Exception as e:
+        result['errors'].append(f"Error fetching priority: {str(e)}")
+    
+    return jsonify(result)
 
 
 def mask_database_url(url):
