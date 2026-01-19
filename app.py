@@ -79,8 +79,11 @@ def _init_postgres_db():
         try:
             print(f"Attempting PostgreSQL connection (attempt {attempt + 1}/{max_retries})...")
             conn = get_db_connection()
-            cursor = conn.cursor()
             print("PostgreSQL connection successful!")
+            
+            # Use autocommit for DDL statements to avoid transaction issues
+            conn.autocommit = True
+            cursor = conn.cursor()
             
             # Create table with PostgreSQL syntax
             cursor.execute('''
@@ -112,32 +115,38 @@ def _init_postgres_db():
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            print("  Created ticket_summaries table")
             
             # Add columns if they don't exist (for existing databases)
+            # Using DO block to handle column existence check
             columns_to_add = [
-                'recommended_solution TEXT',
-                'search_queries_used TEXT',
-                'search_results_summary TEXT',
-                'additional_test_scenarios TEXT',
-                'test_cases TEXT',
-                'num_test_cases INTEGER',
-                'documentation_references TEXT',
-                'is_documented_limitation INTEGER',
-                'is_documented_prerequisite INTEGER',
-                'documentation_check_summary TEXT',
-                'issue_theme TEXT',
-                'root_cause_theme TEXT',
-                'ai_provider TEXT'
+                ('recommended_solution', 'TEXT'),
+                ('search_queries_used', 'TEXT'),
+                ('search_results_summary', 'TEXT'),
+                ('additional_test_scenarios', 'TEXT'),
+                ('test_cases', 'TEXT'),
+                ('num_test_cases', 'INTEGER'),
+                ('documentation_references', 'TEXT'),
+                ('is_documented_limitation', 'INTEGER'),
+                ('is_documented_prerequisite', 'INTEGER'),
+                ('documentation_check_summary', 'TEXT'),
+                ('issue_theme', 'TEXT'),
+                ('root_cause_theme', 'TEXT'),
+                ('ai_provider', 'TEXT')
             ]
             
-            for col_def in columns_to_add:
-                col_name = col_def.split()[0]
+            for col_name, col_type in columns_to_add:
                 try:
-                    cursor.execute(f'ALTER TABLE ticket_summaries ADD COLUMN {col_def}')
-                except psycopg.errors.DuplicateColumn:
-                    conn.rollback()  # PostgreSQL requires rollback after error
-                except Exception:
-                    conn.rollback()
+                    cursor.execute(f'''
+                        DO $$ 
+                        BEGIN 
+                            ALTER TABLE ticket_summaries ADD COLUMN {col_name} {col_type};
+                        EXCEPTION 
+                            WHEN duplicate_column THEN NULL;
+                        END $$;
+                    ''')
+                except Exception as e:
+                    print(f"  Warning: Could not add column {col_name}: {e}")
             
             # Create index on ticket_id for faster lookups
             cursor.execute('''
@@ -165,30 +174,27 @@ def _init_postgres_db():
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            print("  Created ticket_priorities table")
             
-            # Add ticket_fields column if it doesn't exist (for existing databases)
-            try:
-                cursor.execute('ALTER TABLE ticket_priorities ADD COLUMN ticket_fields TEXT')
-            except psycopg.errors.DuplicateColumn:
-                conn.rollback()  # PostgreSQL requires rollback after error
-            except Exception:
-                conn.rollback()
+            # Add columns using DO block to handle existence
+            priority_columns = [
+                ('ticket_fields', 'TEXT'),
+                ('is_lost_deal', 'INTEGER'),
+                ('deal_value', 'TEXT')
+            ]
             
-            # Add is_lost_deal column if it doesn't exist (for existing databases)
-            try:
-                cursor.execute('ALTER TABLE ticket_priorities ADD COLUMN is_lost_deal INTEGER')
-            except psycopg.errors.DuplicateColumn:
-                conn.rollback()  # PostgreSQL requires rollback after error
-            except Exception:
-                conn.rollback()
-            
-            # Add deal_value column if it doesn't exist (for existing databases)
-            try:
-                cursor.execute('ALTER TABLE ticket_priorities ADD COLUMN deal_value TEXT')
-            except psycopg.errors.DuplicateColumn:
-                conn.rollback()  # PostgreSQL requires rollback after error
-            except Exception:
-                conn.rollback()
+            for col_name, col_type in priority_columns:
+                try:
+                    cursor.execute(f'''
+                        DO $$ 
+                        BEGIN 
+                            ALTER TABLE ticket_priorities ADD COLUMN {col_name} {col_type};
+                        EXCEPTION 
+                            WHEN duplicate_column THEN NULL;
+                        END $$;
+                    ''')
+                except Exception as e:
+                    print(f"  Warning: Could not add column {col_name}: {e}")
             
             # Create index on ticket_priorities
             cursor.execute('''
@@ -209,13 +215,12 @@ def _init_postgres_db():
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            print("  Created bulk_jobs table")
             
             # Create index on bulk_jobs
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_bulk_jobs_status ON bulk_jobs(status)
             ''')
-            
-            conn.commit()
             
             # Verify tables exist and count existing records (for safety check)
             cursor.execute("SELECT COUNT(*) FROM ticket_summaries")
