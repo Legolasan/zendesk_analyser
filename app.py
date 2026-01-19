@@ -15,16 +15,15 @@ from services.priority_service import PriorityAnalyzerService, extract_deal_valu
 from utils.field_mapper import map_ticket_fields, get_field_mapping
 import errno
 
-# PostgreSQL support for Railway deployment
+# PostgreSQL support for Railway deployment (using psycopg v3)
 try:
-    import psycopg2
-    import psycopg2.extras
-    import psycopg2.errors
+    import psycopg
+    from psycopg.rows import dict_row
     POSTGRES_AVAILABLE = True
-    print("[DB Config] psycopg2 imported successfully")
+    print("[DB Config] psycopg (v3) imported successfully")
 except ImportError as e:
     POSTGRES_AVAILABLE = False
-    print(f"[DB Config] psycopg2 import failed: {e}")
+    print(f"[DB Config] psycopg import failed: {e}")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
@@ -54,7 +53,7 @@ def get_db_connection():
     """Get a database connection - PostgreSQL for Railway, SQLite for local."""
     if USE_POSTGRES:
         # Railway provides DATABASE_URL in format: postgresql://user:pass@host:port/db
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg.connect(DATABASE_URL)
         return conn
     else:
         return sqlite3.connect(DB_PATH)
@@ -135,7 +134,7 @@ def _init_postgres_db():
                 col_name = col_def.split()[0]
                 try:
                     cursor.execute(f'ALTER TABLE ticket_summaries ADD COLUMN {col_def}')
-                except psycopg2.errors.DuplicateColumn:
+                except psycopg.errors.DuplicateColumn:
                     conn.rollback()  # PostgreSQL requires rollback after error
                 except Exception:
                     conn.rollback()
@@ -170,7 +169,7 @@ def _init_postgres_db():
             # Add ticket_fields column if it doesn't exist (for existing databases)
             try:
                 cursor.execute('ALTER TABLE ticket_priorities ADD COLUMN ticket_fields TEXT')
-            except psycopg2.errors.DuplicateColumn:
+            except psycopg.errors.DuplicateColumn:
                 conn.rollback()  # PostgreSQL requires rollback after error
             except Exception:
                 conn.rollback()
@@ -178,7 +177,7 @@ def _init_postgres_db():
             # Add is_lost_deal column if it doesn't exist (for existing databases)
             try:
                 cursor.execute('ALTER TABLE ticket_priorities ADD COLUMN is_lost_deal INTEGER')
-            except psycopg2.errors.DuplicateColumn:
+            except psycopg.errors.DuplicateColumn:
                 conn.rollback()  # PostgreSQL requires rollback after error
             except Exception:
                 conn.rollback()
@@ -186,7 +185,7 @@ def _init_postgres_db():
             # Add deal_value column if it doesn't exist (for existing databases)
             try:
                 cursor.execute('ALTER TABLE ticket_priorities ADD COLUMN deal_value TEXT')
-            except psycopg2.errors.DuplicateColumn:
+            except psycopg.errors.DuplicateColumn:
                 conn.rollback()  # PostgreSQL requires rollback after error
             except Exception:
                 conn.rollback()
@@ -589,7 +588,7 @@ def _get_ticket_summary_postgres(ticket_id):
     """Retrieve ticket summary from PostgreSQL."""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute('SELECT * FROM ticket_summaries WHERE ticket_id = %s', (ticket_id,))
         row = cursor.fetchone()
         cursor.close()
@@ -635,7 +634,7 @@ def _get_recent_tickets_postgres(limit):
     """Get recent tickets from PostgreSQL."""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute('''
             SELECT ticket_id, issue_description, root_cause, issue_theme,
                    test_case_needed, regression_test_needed,
@@ -689,7 +688,7 @@ def _search_tickets_postgres(query):
     """Search tickets in PostgreSQL."""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         search_pattern = f'%{query}%'
         cursor.execute('''
             SELECT ticket_id, issue_description, root_cause, issue_theme,
@@ -831,7 +830,7 @@ def _get_ticket_priority_postgres(ticket_id):
     """Retrieve ticket priority from PostgreSQL."""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute('SELECT * FROM ticket_priorities WHERE ticket_id = %s', (ticket_id,))
         row = cursor.fetchone()
         cursor.close()
@@ -871,7 +870,7 @@ def _get_recent_priorities_postgres(limit):
     """Get recent priorities from PostgreSQL."""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute('''
             SELECT ticket_id, clear_description, ai_theme, product_area,
                    is_blocker, is_churn_risk, is_escalation, is_revenue_impact,
@@ -1013,7 +1012,7 @@ def _get_bulk_job_postgres(job_id):
     """Get bulk job from PostgreSQL."""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute('SELECT * FROM bulk_jobs WHERE id = %s', (job_id,))
         row = cursor.fetchone()
         cursor.close()
@@ -1154,7 +1153,7 @@ def _get_recent_bulk_jobs_postgres(limit):
     """Get recent bulk jobs from PostgreSQL."""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(row_factory=dict_row)
         cursor.execute('''
             SELECT id, status, total_tickets, processed_count, success_count,
                    failed_count, created_at, updated_at
