@@ -2725,7 +2725,8 @@ def index():
             raise
     
     # GET request - retrieve data from session and database
-    ticket_id = session.pop('ticket_id', '')
+    # Check URL query parameter first, then fall back to session
+    ticket_id = request.args.get('ticket_id', '') or session.pop('ticket_id', '')
     error = session.pop('error', '')
     
     # Retrieve data from database if ticket_id is present
@@ -2738,8 +2739,8 @@ def index():
             # Remove ticket_id from fields since we pass it explicitly
             fields.pop('ticket_id', None)
         else:
-            # If ticket not in DB yet, it might still be processing
-            # Keep fields empty and show loading state
+            # Ticket not found in database
+            error = f"Ticket {ticket_id} not found in saved database. It may not have been analyzed yet."
             fields = {
                 'issue_description': '',
                 'root_cause': '',
@@ -2989,7 +2990,8 @@ def priority_index():
         return redirect(url_for('priority_index'))
     
     # GET request - retrieve data from session and database
-    ticket_id = session.pop('priority_ticket_id', '')
+    # Check URL query parameter first, then fall back to session
+    ticket_id = request.args.get('ticket_id', '') or session.pop('priority_ticket_id', '')
     error = session.pop('priority_error', '')
     
     # Retrieve data from database if ticket_id is present
@@ -3001,6 +3003,8 @@ def priority_index():
                 priority_data = format_priority_for_display(priority_row)
                 # Remove ticket_id from priority_data to avoid duplicate keyword argument
                 priority_data.pop('ticket_id', None)
+            else:
+                error = f"Priority analysis for ticket {ticket_id} not found in database."
         except Exception as e:
             print(f"Error retrieving priority data for ticket {ticket_id}: {str(e)}")
     
