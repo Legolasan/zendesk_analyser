@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bulk CSV Analyzer - Zendesk Ticket Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --secondary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        --info-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        --dark-bg: #1a1d29;
+        --card-bg: #ffffff;
+        --text-primary: #2d3748;
+        --text-secondary: #718096;
+        --border-color: #e2e8f0;
+        --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+        --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+        --shadow-xl: 0 20px 40px rgba(0,0,0,0.15);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body { 
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #667eea 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .main-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+      }
+
+      .header-section {
+        text-align: center;
+        margin-bottom: 2.5rem;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: var(--shadow-xl);
+        backdrop-filter: blur(10px);
+      }
+
+      .header-section h1 {
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .header-section p {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+      }
+
+      .nav-links {
+        margin-top: 1rem;
+      }
+
+      .nav-links a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        margin: 0 1rem;
+        transition: color 0.3s ease;
+      }
+
+      .nav-links a:hover {
+        color: #764ba2;
+      }
+
+      .section-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      @media (min-width: 992px) {
+        .section-container {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .card-modern {
+        background: var(--card-bg);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        border: none;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .card-modern:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-xl);
+      }
+
+      .card-header-modern {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 1.5rem;
+        border: none;
+        font-weight: 600;
+        font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .card-header-modern i {
+        font-size: 1.5rem;
+      }
+
+      .card-body-modern {
+        padding: 2rem;
+      }
+
+      .form-section {
+        background: var(--card-bg);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .form-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        font-size: 1.1rem;
+      }
+
+      .form-control-modern {
+        padding: 1rem 1.25rem;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .form-control-modern:focus {
+        border-color: #f093fb;
+        box-shadow: 0 0 0 3px rgba(240, 147, 251, 0.1);
+        outline: none;
+      }
+
+      .btn-primary-modern {
+        background: var(--primary-gradient);
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn-primary-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        filter: brightness(1.05);
+      }
+
+      .btn-outline-modern {
+        border: 2px solid #f093fb;
+        color: #f093fb;
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
+        background: transparent;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .btn-outline-modern:hover {
+        background: #f093fb;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .btn-danger-modern {
+        background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .list-group-item-modern {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .list-group-item-modern:hover {
+        border-color: #f093fb;
+        box-shadow: var(--shadow-md);
+        transform: translateX(5px);
+      }
+
+      .badge-modern {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.85rem;
+      }
+
+      .badge-success-modern {
+        background: var(--success-gradient);
+        color: white;
+      }
+
+      .badge-warning-modern {
+        background: var(--warning-gradient);
+        color: white;
+      }
+
+      .badge-info-modern {
+        background: var(--info-gradient);
+        color: white;
+      }
+
+      .badge-secondary-modern {
+        background: linear-gradient(135deg, #868e96 0%, #495057 100%);
+        color: white;
+      }
+
+      .badge-danger-modern {
+        background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+        color: white;
+      }
+
+      .progress-modern {
+        height: 1.5rem;
+        border-radius: 10px;
+        background: #e9ecef;
+        overflow: hidden;
+      }
+
+      .progress-bar-modern {
+        background: var(--primary-gradient);
+        border-radius: 10px;
+        transition: width 0.3s ease;
+      }
+
+      .alert-modern {
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        border: none;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 1rem;
+      }
+
+      .alert-success-modern {
+        background: var(--success-gradient);
+        color: white;
+      }
+
+      .alert-danger-modern {
+        background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+        color: white;
+      }
+
+      .results-section {
+        background: var(--card-bg);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        padding: 2.5rem;
+        margin-top: 2rem;
+      }
+
+      .ticket-result-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+      }
+
+      .ticket-result-item.success {
+        border-left: 4px solid #00f2fe;
+      }
+
+      .ticket-result-item.failed {
+        border-left: 4px solid #f5576c;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-secondary);
+      }
+
+      .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+      }
+
+      footer {
+        text-align: center;
+        padding: 2rem;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+      }
+
+      .upload-area {
+        border: 2px dashed var(--border-color);
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .upload-area:hover {
+        border-color: #f093fb;
+        background: rgba(240, 147, 251, 0.05);
+      }
+
+      .upload-area.drag-over {
+        border-color: #f093fb;
+        background: rgba(240, 147, 251, 0.1);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      .status-running {
+        color: #f093fb;
+      }
+
+      .status-completed {
+        color: #00f2fe;
+      }
+
+      .status-failed {
+        color: #f5576c;
+      }
+
+      .status-pending {
+        color: #868e96;
+      }
+    </style>
+</head>
+<body>
+  <div class="main-wrapper">
+    <!-- Header -->
+    <div class="header-section fade-in">
+      <h1><i class="fas fa-file-csv"></i> Bulk CSV Analyzer</h1>
+      <p>Process multiple Zendesk tickets from a CSV file</p>
+      <div class="nav-links">
+        <a href="/"><i class="fas fa-clipboard-check"></i> Test Case Generator</a>
+        <a href="/priority"><i class="fas fa-chart-line"></i> Priority Analyzer</a>
+        <a href="/bulk"><i class="fas fa-file-csv"></i> Bulk Analyzer</a>
+      </div>
+    </div>
+
+    <!-- Error/Success Messages -->
+    {% if error %}
+      <div class="alert alert-danger-modern fade-in">
+        <i class="fas fa-exclamation-circle"></i> {{ error }}
+      </div>
+    {% endif %}
+    {% if success %}
+      <div class="alert alert-success-modern fade-in">
+        <i class="fas fa-check-circle"></i> {{ success }}
+      </div>
+    {% endif %}
+
+    <!-- Main Content Grid -->
+    <div class="section-container">
+      <!-- Left Section: Upload Form -->
+      <div class="form-section fade-in">
+        <h3 class="mb-4" style="color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-upload" style="color: #f093fb;"></i> Upload CSV
+        </h3>
+        <form method="post" enctype="multipart/form-data" id="upload-form">
+          <div class="mb-4">
+            <label class="form-label">
+              <i class="fas fa-file-alt"></i> CSV File
+            </label>
+            <div class="upload-area" id="upload-area" onclick="document.getElementById('csv_file').click();">
+              <input type="file" class="d-none" id="csv_file" name="csv_file" accept=".csv">
+              <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color: #f093fb;"></i>
+              <p class="mb-1"><strong>Click to upload</strong> or drag and drop</p>
+              <p class="text-muted small" id="file-name">CSV file with ticket_id column</p>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary-modern w-100" id="submit-btn">
+            <i class="fas fa-rocket"></i> Start Processing
+          </button>
+        </form>
+
+        <div class="mt-4 p-3" style="background: #f8f9fa; border-radius: 12px;">
+          <h6 style="color: var(--text-primary);"><i class="fas fa-info-circle"></i> CSV Format</h6>
+          <p class="small text-muted mb-2">Your CSV should have a <code>ticket_id</code> column:</p>
+          <pre class="small mb-0" style="background: #e9ecef; padding: 0.75rem; border-radius: 8px;">ticket_id
+12345
+12346
+12347</pre>
+        </div>
+      </div>
+
+      <!-- Right Section: Recent Jobs -->
+      <div class="card-modern fade-in">
+        <div class="card-header-modern">
+          <i class="fas fa-history"></i>
+          <span>Recent Jobs</span>
+        </div>
+        <div class="card-body-modern">
+          {% if recent_jobs %}
+            <div class="list-group" id="recent_jobs_list">
+              {% for job in recent_jobs %}
+                <div class="list-group-item-modern">
+                  <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+                    <span style="font-weight: 600; color: var(--text-primary);">
+                      <i class="fas fa-tasks"></i> Job {{ job.id[:8] }}...
+                    </span>
+                    <span class="badge-modern badge-{{ 'success' if job.status == 'completed' else ('warning' if job.status == 'running' else ('danger' if job.status == 'failed' else 'secondary')) }}-modern">
+                      {{ job.status|capitalize }}
+                    </span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">
+                      {{ job.success_count }}/{{ job.total_tickets }} succeeded
+                    </span>
+                    <button class="btn btn-outline-modern btn-sm" onclick="viewJobDetails('{{ job.id }}')">
+                      <i class="fas fa-eye"></i> View
+                    </button>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <p>No bulk jobs yet. Upload a CSV to get started.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Job Progress Section -->
+    <div class="results-section fade-in" id="job-progress-section" style="{% if not active_job_id %}display: none;{% endif %}">
+      <h2 class="mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        <i class="fas fa-cog fa-spin"></i> Job Progress
+      </h2>
+      
+      <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span id="progress-text">Processing...</span>
+          <span id="progress-percentage">0%</span>
+        </div>
+        <div class="progress-modern">
+          <div class="progress-bar-modern" id="progress-bar" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-md-4">
+          <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; padding: 1rem; text-align: center;">
+            <h3 id="processed-count" style="color: var(--text-primary);">0</h3>
+            <small class="text-muted">Processed</small>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 12px; padding: 1rem; text-align: center;">
+            <h3 id="success-count" style="color: #00f2fe;">0</h3>
+            <small class="text-muted">Succeeded</small>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border-radius: 12px; padding: 1rem; text-align: center;">
+            <h3 id="failed-count" style="color: #f5576c;">0</h3>
+            <small class="text-muted">Failed</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 style="color: var(--text-primary);"><i class="fas fa-list"></i> Ticket Results</h5>
+        <button class="btn btn-danger-modern" id="cancel-btn" onclick="cancelJob()" style="display: none;">
+          <i class="fas fa-stop"></i> Cancel Job
+        </button>
+      </div>
+      <div id="ticket-results" style="max-height: 400px; overflow-y: auto;">
+        <!-- Results will be populated by JavaScript -->
+      </div>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 Zendesk Ticket Analyzer | Bulk CSV Processing</p>
+    </footer>
+  </div>
+
+  <script>
+    let currentJobId = '{{ active_job_id }}';
+    let pollingInterval = null;
+
+    // File upload handling
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('csv_file');
+    const fileName = document.getElementById('file-name');
+
+    fileInput.addEventListener('change', function(e) {
+      if (this.files.length > 0) {
+        fileName.textContent = this.files[0].name;
+        fileName.style.color = '#f093fb';
+        fileName.style.fontWeight = '600';
+      }
+    });
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      this.classList.add('drag-over');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+      if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        fileName.textContent = e.dataTransfer.files[0].name;
+        fileName.style.color = '#f093fb';
+        fileName.style.fontWeight = '600';
+      }
+    });
+
+    // Start polling if there's an active job
+    if (currentJobId) {
+      startPolling(currentJobId);
+    }
+
+    function startPolling(jobId) {
+      currentJobId = jobId;
+      document.getElementById('job-progress-section').style.display = 'block';
+      document.getElementById('cancel-btn').style.display = 'inline-block';
+      
+      // Poll immediately, then every 2 seconds
+      pollJobStatus();
+      pollingInterval = setInterval(pollJobStatus, 2000);
+    }
+
+    function stopPolling() {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+      document.getElementById('cancel-btn').style.display = 'none';
+    }
+
+    function pollJobStatus() {
+      if (!currentJobId) return;
+
+      fetch(`/api/bulk/status/${currentJobId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            console.error('Error fetching job status:', data.error);
+            return;
+          }
+
+          updateProgressUI(data);
+
+          // Stop polling if job is complete
+          if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {
+            stopPolling();
+            document.querySelector('#job-progress-section h2').innerHTML = 
+              '<i class="fas fa-check-circle"></i> Job ' + (data.status === 'completed' ? 'Completed' : data.status.charAt(0).toUpperCase() + data.status.slice(1));
+          }
+        })
+        .catch(error => {
+          console.error('Error polling job status:', error);
+        });
+    }
+
+    function updateProgressUI(data) {
+      const total = data.total_tickets || 1;
+      const processed = data.processed_count || 0;
+      const percentage = Math.round((processed / total) * 100);
+
+      document.getElementById('progress-bar').style.width = percentage + '%';
+      document.getElementById('progress-percentage').textContent = percentage + '%';
+      document.getElementById('progress-text').textContent = 
+        `Processing ${processed} of ${total} tickets (${data.status})`;
+      document.getElementById('processed-count').textContent = processed;
+      document.getElementById('success-count').textContent = data.success_count || 0;
+      document.getElementById('failed-count').textContent = data.failed_count || 0;
+
+      // Update ticket results
+      const resultsContainer = document.getElementById('ticket-results');
+      const ticketResults = data.ticket_results || {};
+      
+      let resultsHtml = '';
+      for (const [ticketId, result] of Object.entries(ticketResults)) {
+        const isSuccess = result.status === 'success';
+        resultsHtml += `
+          <div class="ticket-result-item ${isSuccess ? 'success' : 'failed'}">
+            <div>
+              <strong>#${ticketId}</strong>
+              ${!isSuccess && result.error ? `<br><small class="text-muted">${escapeHtml(result.error.substring(0, 100))}</small>` : ''}
+            </div>
+            <div>
+              ${isSuccess ? 
+                `<a href="/?ticket_id=${ticketId}" class="btn btn-outline-modern btn-sm me-1" title="View Test Case">
+                   <i class="fas fa-clipboard-check"></i>
+                 </a>
+                 <a href="/priority?ticket_id=${ticketId}" class="btn btn-outline-modern btn-sm" title="View Priority">
+                   <i class="fas fa-chart-line"></i>
+                 </a>` : 
+                `<span class="badge-modern badge-danger-modern">Failed</span>`
+              }
+            </div>
+          </div>
+        `;
+      }
+      resultsContainer.innerHTML = resultsHtml || '<p class="text-muted text-center">Processing tickets...</p>';
+    }
+
+    function cancelJob() {
+      if (!currentJobId) return;
+      
+      if (!confirm('Are you sure you want to cancel this job?')) return;
+
+      fetch(`/api/bulk/cancel/${currentJobId}`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Cancellation requested. The job will stop after the current ticket.');
+          } else {
+            alert('Could not cancel job: ' + (data.message || 'Unknown error'));
+          }
+        })
+        .catch(error => {
+          alert('Error cancelling job: ' + error);
+        });
+    }
+
+    function viewJobDetails(jobId) {
+      currentJobId = jobId;
+      startPolling(jobId);
+      document.getElementById('job-progress-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

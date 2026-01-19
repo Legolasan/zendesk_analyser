@@ -4,6 +4,9 @@ import os
 import sqlite3
 import time
 import json
+import uuid
+import csv
+import io
 from datetime import datetime
 from requests.exceptions import Timeout, RequestException, ConnectionError as RequestsConnectionError
 from zendesk_auth import zendesk_auth
@@ -179,6 +182,26 @@ def _init_postgres_db():
                 CREATE INDEX IF NOT EXISTS idx_priority_ticket_id ON ticket_priorities(ticket_id)
             ''')
             
+            # Create bulk_jobs table for CSV bulk processing
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS bulk_jobs (
+                    id TEXT PRIMARY KEY,
+                    status TEXT,
+                    total_tickets INTEGER,
+                    processed_count INTEGER,
+                    success_count INTEGER,
+                    failed_count INTEGER,
+                    ticket_results TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create index on bulk_jobs
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_bulk_jobs_status ON bulk_jobs(status)
+            ''')
+            
             conn.commit()
             
             # Verify tables exist and count existing records (for safety check)
@@ -186,8 +209,10 @@ def _init_postgres_db():
             summaries_count = cursor.fetchone()[0]
             cursor.execute("SELECT COUNT(*) FROM ticket_priorities")
             priorities_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM bulk_jobs")
+            bulk_jobs_count = cursor.fetchone()[0]
             print(f"PostgreSQL database initialized successfully")
-            print(f"  Existing records: {summaries_count} ticket summaries, {priorities_count} priorities")
+            print(f"  Existing records: {summaries_count} ticket summaries, {priorities_count} priorities, {bulk_jobs_count} bulk jobs")
             
             cursor.close()
             conn.close()
@@ -331,6 +356,26 @@ def _init_sqlite_db():
                 CREATE INDEX IF NOT EXISTS idx_priority_ticket_id ON ticket_priorities(ticket_id)
             ''')
             
+            # Create bulk_jobs table for CSV bulk processing
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS bulk_jobs (
+                    id TEXT PRIMARY KEY,
+                    status TEXT,
+                    total_tickets INTEGER,
+                    processed_count INTEGER,
+                    success_count INTEGER,
+                    failed_count INTEGER,
+                    ticket_results TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create index on bulk_jobs
+            conn.execute('''
+                CREATE INDEX IF NOT EXISTS idx_bulk_jobs_status ON bulk_jobs(status)
+            ''')
+            
             # Enable WAL mode for better concurrent performance
             conn.execute('PRAGMA journal_mode=WAL')
             
@@ -339,8 +384,10 @@ def _init_sqlite_db():
             summaries_count = cursor.fetchone()[0]
             cursor = conn.execute("SELECT COUNT(*) FROM ticket_priorities")
             priorities_count = cursor.fetchone()[0]
+            cursor = conn.execute("SELECT COUNT(*) FROM bulk_jobs")
+            bulk_jobs_count = cursor.fetchone()[0]
             print(f"SQLite database initialized successfully")
-            print(f"  Existing records: {summaries_count} ticket summaries, {priorities_count} priorities")
+            print(f"  Existing records: {summaries_count} ticket summaries, {priorities_count} priorities, {bulk_jobs_count} bulk jobs")
             
             conn.commit()
     except sqlite3.Error as e:
@@ -877,6 +924,258 @@ def format_priority_for_display(row):
 
 # ============================================================
 # END TICKET PRIORITIES CRUD FUNCTIONS
+# ============================================================
+
+# ============================================================
+# BULK JOBS CRUD FUNCTIONS (CSV Bulk Processing)
+# ============================================================
+
+def create_bulk_job(job_id, total_tickets):
+    """
+    Create a new bulk job record.
+    Args:
+        job_id: UUID string for the job
+        total_tickets: Number of tickets to process
+    """
+    values = (
+        job_id,
+        'pending',  # status
+        total_tickets,
+        0,  # processed_count
+        0,  # success_count
+        0,  # failed_count
+        '{}',  # ticket_results (empty JSON)
+        datetime.now().isoformat(),
+        datetime.now().isoformat()
+    )
+    
+    if USE_POSTGRES:
+        _create_bulk_job_postgres(values)
+    else:
+        _create_bulk_job_sqlite(values)
+
+def _create_bulk_job_postgres(values):
+    """Create bulk job in PostgreSQL."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO bulk_jobs (id, status, total_tickets, processed_count, 
+                                   success_count, failed_count, ticket_results,
+                                   created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ''', values)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error creating bulk job in PostgreSQL: {str(e)}")
+
+def _create_bulk_job_sqlite(values):
+    """Create bulk job in SQLite."""
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute('''
+                INSERT INTO bulk_jobs (id, status, total_tickets, processed_count,
+                                       success_count, failed_count, ticket_results,
+                                       created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', values)
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error creating bulk job in SQLite: {str(e)}")
+
+def get_bulk_job(job_id):
+    """
+    Retrieve a bulk job by ID.
+    Returns dict with job data or None if not found.
+    """
+    if USE_POSTGRES:
+        return _get_bulk_job_postgres(job_id)
+    else:
+        return _get_bulk_job_sqlite(job_id)
+
+def _get_bulk_job_postgres(job_id):
+    """Get bulk job from PostgreSQL."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('SELECT * FROM bulk_jobs WHERE id = %s', (job_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if row:
+            result = dict(row)
+            # Parse ticket_results JSON
+            if result.get('ticket_results'):
+                try:
+                    result['ticket_results'] = json.loads(result['ticket_results'])
+                except (json.JSONDecodeError, TypeError):
+                    result['ticket_results'] = {}
+            return result
+        return None
+    except Exception as e:
+        print(f"Error retrieving bulk job from PostgreSQL: {str(e)}")
+        return None
+
+def _get_bulk_job_sqlite(job_id):
+    """Get bulk job from SQLite."""
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute('SELECT * FROM bulk_jobs WHERE id = ?', (job_id,))
+            row = cursor.fetchone()
+            if row:
+                result = dict(row)
+                # Parse ticket_results JSON
+                if result.get('ticket_results'):
+                    try:
+                        result['ticket_results'] = json.loads(result['ticket_results'])
+                    except (json.JSONDecodeError, TypeError):
+                        result['ticket_results'] = {}
+                return result
+            return None
+    except sqlite3.Error as e:
+        print(f"Error retrieving bulk job from SQLite: {str(e)}")
+        return None
+
+def update_bulk_job(job_id, status=None, processed_count=None, success_count=None, 
+                    failed_count=None, ticket_results=None):
+    """
+    Update a bulk job record.
+    Only updates fields that are provided (not None).
+    """
+    if USE_POSTGRES:
+        _update_bulk_job_postgres(job_id, status, processed_count, success_count, 
+                                   failed_count, ticket_results)
+    else:
+        _update_bulk_job_sqlite(job_id, status, processed_count, success_count,
+                                 failed_count, ticket_results)
+
+def _update_bulk_job_postgres(job_id, status, processed_count, success_count, 
+                               failed_count, ticket_results):
+    """Update bulk job in PostgreSQL."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Build dynamic update query
+        updates = []
+        values = []
+        
+        if status is not None:
+            updates.append("status = %s")
+            values.append(status)
+        if processed_count is not None:
+            updates.append("processed_count = %s")
+            values.append(processed_count)
+        if success_count is not None:
+            updates.append("success_count = %s")
+            values.append(success_count)
+        if failed_count is not None:
+            updates.append("failed_count = %s")
+            values.append(failed_count)
+        if ticket_results is not None:
+            updates.append("ticket_results = %s")
+            values.append(json.dumps(ticket_results) if isinstance(ticket_results, dict) else ticket_results)
+        
+        updates.append("updated_at = %s")
+        values.append(datetime.now().isoformat())
+        values.append(job_id)
+        
+        query = f"UPDATE bulk_jobs SET {', '.join(updates)} WHERE id = %s"
+        cursor.execute(query, values)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error updating bulk job in PostgreSQL: {str(e)}")
+
+def _update_bulk_job_sqlite(job_id, status, processed_count, success_count,
+                             failed_count, ticket_results):
+    """Update bulk job in SQLite."""
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            # Build dynamic update query
+            updates = []
+            values = []
+            
+            if status is not None:
+                updates.append("status = ?")
+                values.append(status)
+            if processed_count is not None:
+                updates.append("processed_count = ?")
+                values.append(processed_count)
+            if success_count is not None:
+                updates.append("success_count = ?")
+                values.append(success_count)
+            if failed_count is not None:
+                updates.append("failed_count = ?")
+                values.append(failed_count)
+            if ticket_results is not None:
+                updates.append("ticket_results = ?")
+                values.append(json.dumps(ticket_results) if isinstance(ticket_results, dict) else ticket_results)
+            
+            updates.append("updated_at = ?")
+            values.append(datetime.now().isoformat())
+            values.append(job_id)
+            
+            query = f"UPDATE bulk_jobs SET {', '.join(updates)} WHERE id = ?"
+            conn.execute(query, values)
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error updating bulk job in SQLite: {str(e)}")
+
+def get_recent_bulk_jobs(limit=10):
+    """
+    Get recent bulk jobs ordered by created_at desc.
+    Returns list of dicts with job data.
+    """
+    if USE_POSTGRES:
+        return _get_recent_bulk_jobs_postgres(limit)
+    else:
+        return _get_recent_bulk_jobs_sqlite(limit)
+
+def _get_recent_bulk_jobs_postgres(limit):
+    """Get recent bulk jobs from PostgreSQL."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute('''
+            SELECT id, status, total_tickets, processed_count, success_count,
+                   failed_count, created_at, updated_at
+            FROM bulk_jobs 
+            ORDER BY created_at DESC 
+            LIMIT %s
+        ''', (limit,))
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"Error retrieving recent bulk jobs from PostgreSQL: {str(e)}")
+        return []
+
+def _get_recent_bulk_jobs_sqlite(limit):
+    """Get recent bulk jobs from SQLite."""
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute('''
+                SELECT id, status, total_tickets, processed_count, success_count,
+                       failed_count, created_at, updated_at
+                FROM bulk_jobs 
+                ORDER BY created_at DESC 
+                LIMIT ?
+            ''', (limit,))
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+    except sqlite3.Error as e:
+        print(f"Error retrieving recent bulk jobs from SQLite: {str(e)}")
+        return []
+
+# ============================================================
+# END BULK JOBS CRUD FUNCTIONS
 # ============================================================
 
 def format_ticket_for_display(row):
@@ -2692,6 +2991,159 @@ def get_recent_priorities_api():
 
 # ============================================================
 # END PRIORITY ANALYZER ROUTES
+# ============================================================
+
+# ============================================================
+# BULK CSV ANALYZER ROUTES
+# ============================================================
+
+@app.route('/bulk', methods=['GET', 'POST'])
+def bulk_index():
+    """Bulk CSV Ticket Analyzer page."""
+    if request.method == 'POST':
+        # Handle CSV file upload
+        if 'csv_file' not in request.files:
+            session['bulk_error'] = "No file uploaded."
+            return redirect(url_for('bulk_index'))
+        
+        file = request.files['csv_file']
+        
+        if file.filename == '':
+            session['bulk_error'] = "No file selected."
+            return redirect(url_for('bulk_index'))
+        
+        if not file.filename.endswith('.csv'):
+            session['bulk_error'] = "Please upload a CSV file."
+            return redirect(url_for('bulk_index'))
+        
+        try:
+            # Parse CSV file
+            stream = io.StringIO(file.stream.read().decode("UTF-8"), newline=None)
+            csv_reader = csv.DictReader(stream)
+            
+            # Find ticket_id column (case-insensitive, with variations)
+            ticket_ids = []
+            fieldnames = csv_reader.fieldnames or []
+            
+            # Normalize fieldnames to find ticket_id column
+            ticket_id_column = None
+            for name in fieldnames:
+                normalized = name.lower().strip().replace(' ', '_')
+                if normalized in ['ticket_id', 'ticketid', 'id', 'ticket']:
+                    ticket_id_column = name
+                    break
+            
+            if not ticket_id_column:
+                session['bulk_error'] = f"CSV must have a 'ticket_id' column. Found columns: {', '.join(fieldnames)}"
+                return redirect(url_for('bulk_index'))
+            
+            # Extract ticket IDs
+            for row in csv_reader:
+                ticket_id = row.get(ticket_id_column, '').strip()
+                if ticket_id:
+                    # Clean up the ticket ID (remove any non-numeric characters if needed)
+                    ticket_id = ticket_id.strip()
+                    if ticket_id:
+                        ticket_ids.append(ticket_id)
+            
+            if not ticket_ids:
+                session['bulk_error'] = "No valid ticket IDs found in CSV."
+                return redirect(url_for('bulk_index'))
+            
+            # Remove duplicates while preserving order
+            seen = set()
+            unique_ticket_ids = []
+            for tid in ticket_ids:
+                if tid not in seen:
+                    seen.add(tid)
+                    unique_ticket_ids.append(tid)
+            
+            # Create bulk job
+            job_id = str(uuid.uuid4())
+            create_bulk_job(job_id, len(unique_ticket_ids))
+            
+            # Start background processing
+            from bulk_processor import start_bulk_job
+            start_bulk_job(job_id, unique_ticket_ids)
+            
+            print(f"Bulk job {job_id} created with {len(unique_ticket_ids)} tickets")
+            
+            # Store job_id in session for display
+            session['bulk_job_id'] = job_id
+            session['bulk_success'] = f"Job started! Processing {len(unique_ticket_ids)} tickets."
+            
+        except Exception as e:
+            session['bulk_error'] = f"Error processing CSV: {str(e)[:200]}"
+            import traceback
+            traceback.print_exc()
+        
+        return redirect(url_for('bulk_index'))
+    
+    # GET request
+    error = session.pop('bulk_error', '')
+    success = session.pop('bulk_success', '')
+    active_job_id = session.pop('bulk_job_id', '')
+    
+    # Get recent bulk jobs for display
+    try:
+        recent_jobs = get_recent_bulk_jobs(limit=10)
+    except Exception as e:
+        print(f"Error retrieving recent bulk jobs: {str(e)}")
+        recent_jobs = []
+    
+    return render_template('bulk.html',
+                           error=error,
+                           success=success,
+                           active_job_id=active_job_id,
+                           recent_jobs=recent_jobs)
+
+
+@app.route('/api/bulk/status/<job_id>')
+def get_bulk_status(job_id):
+    """API endpoint to get bulk job status."""
+    try:
+        job = get_bulk_job(job_id)
+        if job:
+            return jsonify({
+                'id': job['id'],
+                'status': job['status'],
+                'total_tickets': job['total_tickets'],
+                'processed_count': job['processed_count'],
+                'success_count': job['success_count'],
+                'failed_count': job['failed_count'],
+                'ticket_results': job.get('ticket_results', {}),
+                'created_at': job.get('created_at', ''),
+                'updated_at': job.get('updated_at', '')
+            })
+        return jsonify({'error': 'Job not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bulk/jobs')
+def get_bulk_jobs_api():
+    """API endpoint to get recent bulk jobs."""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        jobs = get_recent_bulk_jobs(limit=limit)
+        return jsonify(jobs)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bulk/cancel/<job_id>', methods=['POST'])
+def cancel_bulk_job(job_id):
+    """API endpoint to cancel a running bulk job."""
+    try:
+        from bulk_processor import cancel_job
+        if cancel_job(job_id):
+            return jsonify({'success': True, 'message': 'Cancellation requested'})
+        return jsonify({'success': False, 'message': 'Job not found or not running'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ============================================================
+# END BULK CSV ANALYZER ROUTES
 # ============================================================
 
 if __name__ == '__main__':
