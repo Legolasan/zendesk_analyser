@@ -21,8 +21,10 @@ try:
     import psycopg2.extras
     import psycopg2.errors
     POSTGRES_AVAILABLE = True
-except ImportError:
+    print("[DB Config] psycopg2 imported successfully")
+except ImportError as e:
     POSTGRES_AVAILABLE = False
+    print(f"[DB Config] psycopg2 import failed: {e}")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
@@ -33,7 +35,19 @@ ZENDESK_COMMENTS_URL_TEMPLATE = "https://hevodata.zendesk.com/api/v2/tickets/{}/
 
 # Database configuration - uses PostgreSQL if DATABASE_URL is set, otherwise SQLite
 DATABASE_URL = os.environ.get('DATABASE_URL')
+
+# Log database configuration for debugging
+print(f"[DB Config] DATABASE_URL is set: {DATABASE_URL is not None}")
+if DATABASE_URL:
+    # Mask password for logging
+    import re
+    masked = re.sub(r'(://[^:]+:)[^@]+(@)', r'\1****\2', DATABASE_URL)
+    print(f"[DB Config] DATABASE_URL (masked): {masked}")
+print(f"[DB Config] POSTGRES_AVAILABLE: {POSTGRES_AVAILABLE}")
+
 USE_POSTGRES = DATABASE_URL is not None and POSTGRES_AVAILABLE
+print(f"[DB Config] USE_POSTGRES: {USE_POSTGRES}")
+
 DB_PATH = os.path.join(os.path.dirname(__file__), 'ticket_summaries.db')
 
 def get_db_connection():
