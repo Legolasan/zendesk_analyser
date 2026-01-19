@@ -3155,6 +3155,124 @@ def cancel_bulk_job(job_id):
 # END BULK CSV ANALYZER ROUTES
 # ============================================================
 
+# ============================================================
+# HEALTH CHECK ENDPOINTS
+# ============================================================
+
+@app.route('/health')
+def health_check():
+    """Basic health check endpoint."""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat()
+    })
+
+
+@app.route('/health/db')
+def database_health_check():
+    """Database connection health check with detailed diagnostics."""
+    result = {
+        'timestamp': datetime.now().isoformat(),
+        'database_type': 'PostgreSQL' if USE_POSTGRES else 'SQLite',
+        'postgres_available': POSTGRES_AVAILABLE,
+        'database_url_set': DATABASE_URL is not None,
+        'connection': 'unknown',
+        'tables': {},
+        'errors': []
+    }
+    
+    try:
+        conn = get_db_connection()
+        result['connection'] = 'success'
+        
+        if USE_POSTGRES:
+            # PostgreSQL diagnostics
+            cursor = conn.cursor()
+            
+            # Check tables exist
+            cursor.execute("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_schema = 'public'
+            """)
+            tables = [row[0] for row in cursor.fetchall()]
+            
+            # Check each expected table
+            expected_tables = ['ticket_summaries', 'ticket_priorities', 'bulk_jobs']
+            for table in expected_tables:
+                if table in tables:
+                    cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                    count = cursor.fetchone()[0]
+                    result['tables'][table] = {'exists': True, 'row_count': count}
+                else:
+                    result['tables'][table] = {'exists': False, 'row_count': 0}
+                    result['errors'].append(f"Table '{table}' does not exist")
+            
+            # Get PostgreSQL version
+            cursor.execute('SELECT version()')
+            result['db_version'] = cursor.fetchone()[0]
+            
+            cursor.close()
+        else:
+            # SQLite diagnostics
+            cursor = conn.cursor()
+            
+            # Check tables exist
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = [row[0] for row in cursor.fetchall()]
+            
+            # Check each expected table
+            expected_tables = ['ticket_summaries', 'ticket_priorities', 'bulk_jobs']
+            for table in expected_tables:
+                if table in tables:
+                    cursor.execute(f'SELECT COUNT(*) FROM {table}')
+                    count = cursor.fetchone()[0]
+                    result['tables'][table] = {'exists': True, 'row_count': count}
+                else:
+                    result['tables'][table] = {'exists': False, 'row_count': 0}
+                    result['errors'].append(f"Table '{table}' does not exist")
+            
+            # Get SQLite version
+            cursor.execute('SELECT sqlite_version()')
+            result['db_version'] = f"SQLite {cursor.fetchone()[0]}"
+        
+        conn.close()
+        
+        # Determine overall status
+        if result['errors']:
+            result['status'] = 'degraded'
+        else:
+            result['status'] = 'healthy'
+            
+    except Exception as e:
+        result['connection'] = 'failed'
+        result['status'] = 'unhealthy'
+        result['errors'].append(str(e))
+    
+    status_code = 200 if result['status'] == 'healthy' else (503 if result['status'] == 'unhealthy' else 200)
+    return jsonify(result), status_code
+
+
+@app.route('/health/db/init', methods=['POST'])
+def reinitialize_database():
+    """Manually trigger database initialization (creates missing tables)."""
+    try:
+        init_db()
+        return jsonify({
+            'status': 'success',
+            'message': 'Database initialized successfully',
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+# ============================================================
+# END HEALTH CHECK ENDPOINTS
+# ============================================================
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))
     app.run(debug=os.environ.get('RAILWAY_ENVIRONMENT') != 'production', host='0.0.0.0', port=port)
