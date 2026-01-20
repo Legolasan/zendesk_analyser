@@ -3112,8 +3112,14 @@ def bulk_index():
                     unique_ticket_ids.append(tid)
             
             # Get analysis type options
-            run_test_case = request.form.get('run_test_case') == '1'
-            run_priority = request.form.get('run_priority') == '1'
+            run_test_case_raw = request.form.get('run_test_case')
+            run_priority_raw = request.form.get('run_priority')
+            run_test_case = run_test_case_raw == '1'
+            run_priority = run_priority_raw == '1'
+            
+            # Debug logging
+            print(f"[Bulk Upload] Form values - run_test_case_raw: '{run_test_case_raw}', run_priority_raw: '{run_priority_raw}'")
+            print(f"[Bulk Upload] Parsed values - run_test_case: {run_test_case}, run_priority: {run_priority}")
             
             # Validate at least one is selected
             if not run_test_case and not run_priority:
@@ -3128,7 +3134,7 @@ def bulk_index():
             from bulk_processor import start_bulk_job
             start_bulk_job(job_id, unique_ticket_ids, run_test_case=run_test_case, run_priority=run_priority)
             
-            print(f"Bulk job {job_id} created with {len(unique_ticket_ids)} tickets")
+            print(f"[Bulk Upload] Job {job_id} created with {len(unique_ticket_ids)} tickets (test_case={run_test_case}, priority={run_priority})")
             
             # Store job_id in session for display
             session['bulk_job_id'] = job_id
