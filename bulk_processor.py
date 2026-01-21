@@ -75,7 +75,11 @@ class BulkJobManager:
         if run_priority:
             analysis_types.append("Priority")
         
-        print(f"Starting bulk job {job_id} with {len(ticket_ids)} tickets (Analysis: {', '.join(analysis_types)})")
+        print(f"[BulkProcessor] Starting job {job_id}")
+        print(f"[BulkProcessor] run_test_case={run_test_case}, run_priority={run_priority}")
+        print(f"[BulkProcessor] priority_service initialized: {priority_service is not None}")
+        print(f"[BulkProcessor] Analysis types: {', '.join(analysis_types) if analysis_types else 'NONE'}")
+        print(f"[BulkProcessor] Processing {len(ticket_ids)} tickets")
         
         # Update job status to running
         update_bulk_job(job_id, status='running')
@@ -224,6 +228,7 @@ def process_single_ticket(
         
         # Step 4: Run test case analysis (if enabled)
         if run_test_case:
+            print(f"  Ticket {ticket_id}: Running TEST CASE analysis...")
             try:
                 test_case_fields = get_ticket_analysis(conversation, ticket_id=ticket_id, timeout=120)
                 if test_case_fields and isinstance(test_case_fields, dict):
@@ -234,32 +239,40 @@ def process_single_ticket(
             except Exception as e:
                 print(f"  Ticket {ticket_id}: Test case analysis failed: {str(e)[:100]}")
                 # Continue with priority analysis even if test case fails
+        else:
+            print(f"  Ticket {ticket_id}: SKIPPING test case analysis (disabled)")
         
         # Step 5: Run priority analysis (if enabled)
-        if run_priority and priority_service:
-            try:
-                priority_fields = priority_service.analyze_ticket_priority(
-                    conversation,
-                    ticket_fields=mapped_ticket_fields if mapped_ticket_fields else None,
-                    timeout=60
-                )
-                
-                # Add ticket fields to priority data
-                priority_fields['ticket_fields'] = mapped_ticket_fields
-                
-                # Extract deal value
-                deal_value = extract_deal_value(
-                    ticket_fields=mapped_ticket_fields,
-                    signal_details=priority_fields.get('signal_details', '')
-                )
-                if deal_value:
-                    priority_fields['deal_value'] = deal_value
-                
-                save_ticket_priority(ticket_id, priority_fields)
-                print(f"  Ticket {ticket_id}: Priority analysis saved")
-            except Exception as e:
-                print(f"  Ticket {ticket_id}: Priority analysis failed: {str(e)[:100]}")
-                # Don't fail the whole ticket if priority analysis fails
+        if run_priority:
+            if priority_service:
+                print(f"  Ticket {ticket_id}: Running PRIORITY analysis...")
+                try:
+                    priority_fields = priority_service.analyze_ticket_priority(
+                        conversation,
+                        ticket_fields=mapped_ticket_fields if mapped_ticket_fields else None,
+                        timeout=60
+                    )
+                    
+                    # Add ticket fields to priority data
+                    priority_fields['ticket_fields'] = mapped_ticket_fields
+                    
+                    # Extract deal value
+                    deal_value = extract_deal_value(
+                        ticket_fields=mapped_ticket_fields,
+                        signal_details=priority_fields.get('signal_details', '')
+                    )
+                    if deal_value:
+                        priority_fields['deal_value'] = deal_value
+                    
+                    save_ticket_priority(ticket_id, priority_fields)
+                    print(f"  Ticket {ticket_id}: Priority analysis saved")
+                except Exception as e:
+                    print(f"  Ticket {ticket_id}: Priority analysis failed: {str(e)[:100]}")
+                    # Don't fail the whole ticket if priority analysis fails
+            else:
+                print(f"  Ticket {ticket_id}: Priority analysis enabled but no priority_service available")
+        else:
+            print(f"  Ticket {ticket_id}: SKIPPING priority analysis (disabled)")
         
         return {'success': True}
         
